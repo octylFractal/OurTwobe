@@ -16,6 +16,17 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = firebase.initializeApp(firebaseConfig);
+firebaseApp.firestore().enablePersistence()
+    .catch(function (err) {
+        if (err.code == 'failed-precondition') {
+            alert("You should only keep one tab of OurTwobe open.");
+            return;
+        } else if (err.code == 'unimplemented') {
+            return;
+        } else {
+            console.warn("Failed to enable persistence", err.code)
+        }
+    });
 
 const auth = firebaseApp.auth();
 auth.onIdTokenChanged(pushUidToStore, error => console.log(error));
