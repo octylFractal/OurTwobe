@@ -28,6 +28,8 @@ import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.util.Image
 import discord4j.core.`object`.util.Snowflake
+import discord4j.core.event.domain.guild.MemberJoinEvent
+import discord4j.core.event.domain.guild.MemberLeaveEvent
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.post
 import io.javalin.http.BadRequestResponse
@@ -41,7 +43,10 @@ import io.swagger.v3.oas.models.info.Info
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -55,8 +60,14 @@ fun main() {
     val bot = DiscordClientBuilder.create(discordToken).build()
     bot.login()
     val scope = CoroutineScope(Dispatchers.Default + CoroutineName("OurTwobeMain"))
+
     val firebase = initFirebase()
     val firestore: Firestore = FirestoreClient.getFirestore(firebase)
+
+    scope.launch {
+        updateGuildsInDatabase(bot, firestore)
+    }
+
     val app = Javalin.create {
         it.showJavalinBanner = false
         it.registerPlugin(OpenApiPlugin(
@@ -128,6 +139,47 @@ fun main() {
     app.start(13445)
 }
 
+suspend fun updateGuildsInDatabase(bot: DiscordClient, firestore: Firestore) {
+    val collection = firestore.collection("guilds")
+
+    suspend fun addMember(guildId: Snowflake, memberId: Snowflake) {
+        collection.document(guildId.asString())
+            .collection("members")
+            .document(memberId.asString())
+            .set(mapOf("exists" to true))
+            .await()
+    }
+
+    suspend fun removeMember(guildId: Snowflake, memberId: Snowflake) {
+        collection.document(guildId.asString())
+            .collection("members")
+            .document(memberId.asString())
+            .delete()
+            .await()
+    }
+
+    coroutineScope {
+        bot.guilds
+            .flatMap { guild -> guild.members.map { member -> guild.id to member.id } }
+            .asFlow()
+            .collect { (guildId, memberId) ->
+                addMember(guildId, memberId)
+            }
+        launch {
+            bot.eventDispatcher.on<MemberJoinEvent>()
+                .asFlow()
+                .collect {
+                    addMember(it.guildId, it.member.id)
+                }
+            bot.eventDispatcher.on<MemberLeaveEvent>()
+                .asFlow()
+                .collect {
+                    removeMember(it.guildId, it.user.id)
+                }
+        }
+    }
+}
+
 suspend fun saveProfileToDatabase(bot: DiscordClient, firestore: Firestore, discordUser: DiscordUser) {
     val discordUserSnowflake = Snowflake.of(discordUser.id)
     val guilds = bot.guilds
@@ -152,7 +204,7 @@ private fun avatarUrl(uid: String, avatar: String): String {
         avatar.startsWith("a_") -> "gif"
         else -> "png"
     }
-    return "https://cdn.discordapp.com/avatars/$uid/$avatar.$ext";
+    return "https://cdn.discordapp.com/avatars/$uid/$avatar.$ext"
 }
 
 class UserProfileImpl(
