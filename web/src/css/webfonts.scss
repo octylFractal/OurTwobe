@@ -1,0 +1,29 @@
+.font-family {
+  &-audiowide {
+    font-family: Audiowide, cursive;
+  }
+
+  &-monoton {
+    font-family: Monoton, cursive;
+    position: relative;
+    top: 0.05em;
+  }
+
+  &-press-start-2p {
+    font-family: "Press Start 2P", cursive;
+    position: relative;
+    top: 0.2em;
+  }
+
+  &-sail {
+    font-family: Sail, cursive;
+  }
+
+  &-henny-penny {
+    font-family: "Henny Penny", cursive;
+  }
+
+  &-geostar {
+    font-family: Geostar, cursive;
+  }
+}
