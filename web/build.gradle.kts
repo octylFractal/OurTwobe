@@ -1,3 +1,5 @@
+import net.minecrell.gradle.licenser.LicenseExtension
+import net.minecrell.gradle.licenser.header.HeaderStyle
 import java.util.regex.Pattern
 
 plugins {
@@ -7,6 +9,16 @@ plugins {
 
 inciseBlue {
     license()
+}
+
+configure<LicenseExtension> {
+    style.putAt("ts", HeaderStyle.BLOCK_COMMENT)
+    style.putAt("tsx", HeaderStyle.BLOCK_COMMENT)
+    include("**/*.ts")
+    include("**/*.tsx")
+    tasks.register("typescript") {
+        files = fileTree("src")
+    }
 }
 
 val localLibraries = project.buildDir.resolve("local-libraries")
