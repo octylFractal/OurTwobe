@@ -14,11 +14,11 @@ export const AppNavbar: React.FC = () => {
     }
 
     return <Navbar color="dark" dark expand="md">
-        <NavbarBrand href="/" className="py-3">
+        <NavbarBrand href="/" className="py-3 pl-0">
             <NavbarImg src={Logo} alt="Logo"/>
-            <h2 className="font-family-audiowide d-inline align-middle">OurTwobe</h2>
+            <h2 className="font-family-audiowide d-inline align-middle flex-grow-1">OurTwobe</h2>
         </NavbarBrand>
-        <NavbarToggler onClick={toggle}/>
+        <NavbarToggler onClick={toggle} className="mx-auto"/>
         <Collapse isOpen={isOpen} navbar className="align-self-stretch align-items-stretch">
             <Nav className="mr-auto" navbar>
                 <RoutedNavLink exact to="/">Home</RoutedNavLink>

@@ -12,10 +12,16 @@ import {AppNavbar} from "./AppNavbar";
 const SplashLazy = loadable(() => import("./Splash"));
 const LoginHandlerLazy = loadable(() => import("./LoginHandler"));
 const ServerLazy = loadable(() => import("./Server"));
+const ServerNavbarLazy = loadable(() => import("./ServerNavbar"));
 
 const HotPortion = hot(() => {
     return <SimpleErrorBoundary context="the application root">
         <AppNavbar/>
+        <Switch>
+            <Route path="/server/:serverId/">
+                <ServerNavbarLazy/>
+            </Route>
+        </Switch>
         <Container fluid={true} className="p-3">
             <Switch>
                 <Route path="/discord/">

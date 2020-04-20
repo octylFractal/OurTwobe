@@ -35,7 +35,7 @@ export const ServerDropdown: React.FC<SeriesDropdownProps> = ({loggedIn, servers
                     <RoutedDropdownLink
                         to={`/server/${server.id}`}
                         key={server.id}>
-                        <ServerIcon server={server}/>
+                        <ServerIcon server={server} className="mr-3"/>
                         {server.name}
                     </RoutedDropdownLink>
                 )}
