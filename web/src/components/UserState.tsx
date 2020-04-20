@@ -6,6 +6,7 @@ import {generateOAuthLink} from "../firebase/auth";
 import {firebaseApp} from "../firebase/setup";
 import {UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
+import { Redirect } from "react-router-dom";
 
 function avatarUrl(uid: string, avatar: string): string {
     const ext = avatar.startsWith("a_") ? "gif" : "png";
@@ -25,6 +26,8 @@ export const UserState: React.FC<{ userInfo: UserInfoRecord }> = ({userInfo: {he
     if (typeof uid === "undefined") {
         // lazily generate OAuth link to prevent overwriting state
         return <NavLink href="#" onClick={() => window.location.assign(generateOAuthLink())}>
+            {/* ensure that we redirect to the home page on log-out */}
+            <Redirect to="/"/>
             <FontAwesomeIcon icon={faSignInAlt}/> Sign In
         </NavLink>;
     }

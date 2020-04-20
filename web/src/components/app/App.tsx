@@ -9,6 +9,7 @@ import ScrollToTop from "../compat/ScrollToTop";
 import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
 import {AppNavbar} from "./AppNavbar";
 
+const SplashLazy = loadable(() => import("./Splash"));
 const LoginHandlerLazy = loadable(() => import("./LoginHandler"));
 const ServerLazy = loadable(() => import("./Server"));
 
@@ -24,8 +25,7 @@ const HotPortion = hot(() => {
                     <ServerLazy/>
                 </Route>
                 <Route path="/">
-                    <p>TODO!</p>
-                    {/*<UserTimeCardsLazy/>*/}
+                    <SplashLazy/>
                 </Route>
             </Switch>
         </Container>
