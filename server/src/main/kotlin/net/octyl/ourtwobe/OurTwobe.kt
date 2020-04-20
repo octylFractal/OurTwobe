@@ -48,12 +48,15 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
+import mu.KotlinLogging
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.http.HttpStatus
 import java.nio.file.Files
 import java.nio.file.Path
+
+private val LOGGER = KotlinLogging.logger {}
 
 fun main() {
     val discordToken = Files.readString(Path.of("./secrets/discord-token.txt")).trim()
@@ -143,19 +146,27 @@ suspend fun updateGuildsInDatabase(bot: DiscordClient, firestore: Firestore) {
     val collection = firestore.collection("guilds")
 
     suspend fun addMember(guildId: Snowflake, memberId: Snowflake) {
-        collection.document(guildId.asString())
-            .collection("members")
-            .document(memberId.asString())
-            .set(mapOf("exists" to true))
-            .await()
+        try {
+            collection.document(guildId.asString())
+                .collection("members")
+                .document(memberId.asString())
+                .set(mapOf("exists" to true))
+                .await()
+        } catch (e: Exception) {
+            LOGGER.warn(e) { "Failed to add member $memberId to guild $guildId" }
+        }
     }
 
     suspend fun removeMember(guildId: Snowflake, memberId: Snowflake) {
-        collection.document(guildId.asString())
-            .collection("members")
-            .document(memberId.asString())
-            .delete()
-            .await()
+        try {
+            collection.document(guildId.asString())
+                .collection("members")
+                .document(memberId.asString())
+                .delete()
+                .await()
+        } catch (e: Exception) {
+            LOGGER.warn(e) { "Failed to remove member $memberId from guild $guildId" }
+        }
     }
 
     coroutineScope {
@@ -171,6 +182,8 @@ suspend fun updateGuildsInDatabase(bot: DiscordClient, firestore: Firestore) {
                 .collect {
                     addMember(it.guildId, it.member.id)
                 }
+        }
+        launch {
             bot.eventDispatcher.on<MemberLeaveEvent>()
                 .asFlow()
                 .collect {
