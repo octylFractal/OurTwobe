@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "outDir": "./dist/",
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "module": "es2020",
+        "target": "esnext",
+        "jsx": "preserve",
+        "allowJs": false,
+        "sourceMap": true,
+        "strict": true,
+        "noImplicitReturns": true,
+        "allowSyntheticDefaultImports": true,
+        "moduleResolution": "node",
+        "typeRoots": [
+            "./typings"
+        ],
+        "paths": {
+            "common": [
+                "./build/local-libraries/common"
+            ]
+        },
+        "lib": [
+            "es6",
+            "es5",
+            "es2017",
+            "dom",
+            "scripthost"
+        ]
+    }
+}

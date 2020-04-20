@@ -1,0 +1,15 @@
+{
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "modules": false
+            }
+        ],
+        "@babel/react"
+    ],
+    "plugins": [
+        "@babel/plugin-transform-runtime",
+        "react-hot-loader/babel"
+    ]
+}

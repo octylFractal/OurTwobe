@@ -1,0 +1,9 @@
+@import "~bootswatch/dist/slate/variables";
+@import "~bootstrap/scss/functions";
+
+$font-size-base: 1.25rem;
+
+@import "~bootstrap/scss/variables";
+
+$font-family-sans-serif: join(Changa, $font-family-sans-serif);
+$font-family-base: $font-family-sans-serif;

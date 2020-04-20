@@ -1,0 +1,20 @@
+@import "bootstrap-init";
+
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/slate/bootswatch";
+
+.nav-item {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar-img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: map-get($spacers, 3);
+}
