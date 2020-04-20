@@ -26,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.cloud.FirestoreClient
 import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
+import discord4j.core.`object`.util.Image
 import discord4j.core.`object`.util.Snowflake
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.post
@@ -133,28 +134,37 @@ suspend fun saveProfileToDatabase(bot: DiscordClient, firestore: Firestore, disc
         .filterWhen { guild ->
             guild.members.any { it.id == discordUserSnowflake }
         }
-        .map { ServerImpl(it.id.asString(), it.name) }
+        .map { ServerImpl(it.id.asString(), it.name, it.getIconUrl(Image.Format.PNG).orElse(null)) }
         .collectList()
         .awaitSingle()
         .toTypedArray<Server>()
     firestore.collection("profiles").document(discordUser.id).set(
         UserProfileImpl(
             discordUser.username,
-            discordUser.avatar,
+            avatarUrl(discordUser.id, discordUser.avatar),
             guilds
         ).convertToMapViaJackson()
     ).await()
 }
 
+private fun avatarUrl(uid: String, avatar: String): String {
+    val ext = when {
+        avatar.startsWith("a_") -> "gif"
+        else -> "png"
+    }
+    return "https://cdn.discordapp.com/avatars/$uid/$avatar.$ext";
+}
+
 class UserProfileImpl(
     override val username: String,
-    override val avatar: String,
+    override val avatarUrl: String,
     override val servers: Array<Server>
 ) : UserProfile
 
 class ServerImpl(
     override val id: String,
-    override val name: String
+    override val name: String,
+    override val iconUrl: String?
 ) : Server
 
 @JsonIgnoreProperties(ignoreUnknown = true)

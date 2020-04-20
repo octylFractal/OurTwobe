@@ -1,0 +1,17 @@
+@import "bootstrap-init";
+
+.server-icon {
+  border: 2 * $border-width solid $border-color;
+  background-color: $gray-900;
+  margin: map-get($spacers, 1) map-get($spacers, 3) map-get($spacers, 1) map-get($spacers, 1);
+}
+
+.server-icon-text {
+  font-size: $font-size-sm;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+}

@@ -3,7 +3,9 @@ import React, {useState} from "react";
 import {RoutedDropdownLink} from "./compat/RoutedDropdownLink";
 import classNames from "classnames";
 import {net} from "common";
+import {NavbarImg} from "./NavbagImg";
 import Server = net.octyl.ourtwobe.Server;
+import {ServerIcon} from "./ServerIcon";
 
 export interface SeriesDropdownProps {
     loggedIn: boolean
@@ -33,6 +35,7 @@ export const ServerDropdown: React.FC<SeriesDropdownProps> = ({loggedIn, servers
                     <RoutedDropdownLink
                         to={`/server/${server.id}`}
                         key={server.id}>
+                        <ServerIcon server={server}/>
                         {server.name}
                     </RoutedDropdownLink>
                 )}

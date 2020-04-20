@@ -3,7 +3,7 @@ package net.octyl.ourtwobe
 @Export
 interface UserProfile {
     val username: String
-    val avatar: String
+    val avatarUrl: String
     val servers: Array<Server>
 }
 
@@ -11,4 +11,5 @@ interface UserProfile {
 interface Server {
     val id: String
     val name: String
+    val iconUrl: String?
 }

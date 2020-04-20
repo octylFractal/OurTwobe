@@ -9,11 +9,6 @@ import {NavbarImg} from "./NavbagImg";
 import {Redirect} from "react-router-dom";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 
-function avatarUrl(uid: string, avatar: string): string {
-    const ext = avatar.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/avatars/${uid}/${avatar}.${ext}`;
-}
-
 function loading() {
     return <div className="navbar-text d-inline-flex align-items-center">
         <FontAwesomeIcon spin icon={faSpinner} size="2x"/>
@@ -45,7 +40,7 @@ export const UserState: React.FC<{ userInfo: UserInfoRecord }> = ({userInfo: {he
 
     return <UncontrolledButtonDropdown>
         <DropdownToggle nav caret>
-            <NavbarImg src={avatarUrl(uid, profile.avatar)} alt="Avatar" className="rounded-circle"/>
+            <NavbarImg src={profile.avatarUrl} alt="Avatar" className="rounded-circle"/>
             {profile.username}
         </DropdownToggle>
         <DropdownMenu right>
