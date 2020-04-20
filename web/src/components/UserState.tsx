@@ -6,7 +6,8 @@ import {generateOAuthLink} from "../firebase/auth";
 import {firebaseApp} from "../firebase/setup";
 import {UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
-import { Redirect } from "react-router-dom";
+import {Redirect} from "react-router-dom";
+import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 
 function avatarUrl(uid: string, avatar: string): string {
     const ext = avatar.startsWith("a_") ? "gif" : "png";
@@ -25,17 +26,19 @@ export const UserState: React.FC<{ userInfo: UserInfoRecord }> = ({userInfo: {he
     }
     if (typeof uid === "undefined") {
         // lazily generate OAuth link to prevent overwriting state
-        return <NavLink href="#" onClick={() => window.location.assign(generateOAuthLink())}>
+        return <NavLink href="#" onClick={() => window.location.assign(generateOAuthLink())}
+                        className="d-block">
             {/* ensure that we redirect to the home page on log-out */}
             <Redirect to="/"/>
-            <FontAwesomeIcon icon={faSignInAlt}/> Sign In
+            <FontAwesomeIcon icon={faSignInAlt}/> Log In to
+            <img className="d-inline-block" height={48} src={DiscordLogo} alt="Discord Logo"/>
         </NavLink>;
     }
     if (typeof profile === "undefined") {
         return loading();
     }
 
-    function signOut() {
+    function logOut() {
         firebaseApp.auth().signOut()
             .catch(err => console.error(err));
     }
@@ -46,8 +49,8 @@ export const UserState: React.FC<{ userInfo: UserInfoRecord }> = ({userInfo: {he
             {profile.username}
         </DropdownToggle>
         <DropdownMenu right>
-            <DropdownItem onClick={signOut}>
-                Sign Out
+            <DropdownItem onClick={logOut}>
+                Log Out
             </DropdownItem>
         </DropdownMenu>
     </UncontrolledButtonDropdown>;
