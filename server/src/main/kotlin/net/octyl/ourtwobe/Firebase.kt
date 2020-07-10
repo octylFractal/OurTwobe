@@ -20,6 +20,11 @@ package net.octyl.ourtwobe
 
 import com.google.api.core.ApiFuture
 import com.google.auth.oauth2.GoogleCredentials
+import com.google.cloud.firestore.DocumentReference
+import com.google.cloud.firestore.Firestore
+import com.google.cloud.firestore.SetOptions
+import com.google.cloud.firestore.WriteBatch
+import com.google.cloud.firestore.WriteResult
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -52,4 +57,22 @@ suspend fun <R> ApiFuture<R>.await(): R {
             }
         }, MoreExecutors.directExecutor())
     }
+}
+
+inline fun Firestore.batch(block: BatchScope.() -> Unit): ApiFuture<List<WriteResult>> {
+    return batch()
+        .also {
+            BatchScope(it).block()
+        }
+        .commit()
+}
+
+class BatchScope(private val batch: WriteBatch) {
+    fun DocumentReference.deleteInBatch() = batch.delete(this)
+
+    fun DocumentReference.setInBatch(map: Map<String, Any>, options: SetOptions? = null) =
+        when (options) {
+            null -> batch.set(this, map)
+            else -> batch.set(this, map, options)
+        }
 }

@@ -19,27 +19,27 @@ dependencies {
     implementation(project(":common"))
     implementation(platform(kotlin("bom")))
     implementation(kotlin("stdlib-jdk8"))
-    commonLib("org.jetbrains.kotlinx", "kotlinx-coroutines", "1.3.5-1.4-M1") {
+    commonLib("org.jetbrains.kotlinx", "kotlinx-coroutines", "1.3.7-1.4-M3") {
         implementation(lib("core"))
         implementation(lib("jdk8"))
         implementation(lib("reactor"))
     }
-    implementation("com.google.guava:guava:28.2-jre")
-    implementation("com.discord4j:discord4j-core:3.0.14")
-    implementation("com.google.firebase:firebase-admin:6.12.2")
-    implementation("io.javalin:javalin:3.8.0")
-    implementation("cc.vileda:kotlin-openapi3-dsl:0.20.2")
+    implementation("com.google.guava:guava:29.0-jre")
+    implementation("com.discord4j:discord4j-core:3.0.15")
+    implementation("com.google.firebase:firebase-admin:6.14.0")
+    implementation("io.javalin:javalin-bundle:3.9.1")
+    implementation("cc.vileda:kotlin-openapi3-dsl:0.21.2")
     implementation("org.slf4j:slf4j-api:1.7.30")
     implementation("com.techshroom:greenish-jungle:0.0.3")
     commonLib("ch.qos.logback", "logback", "1.2.3") {
         implementation(lib("classic"))
         implementation(lib("core"))
     }
-    implementation("io.github.microutils:kotlin-logging:1.7.8")
+    implementation("io.github.microutils:kotlin-logging:1.8.0.1")
 
-    implementation("com.squareup.okhttp3:okhttp:4.5.0")
+    implementation("com.squareup.okhttp3:okhttp:4.7.2")
 
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.10.3"))
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.11.1"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 }

@@ -17,25 +17,17 @@
  */
 
 import React from "react";
-import {useSelector} from "react-redux";
-import {LocalState} from "../../redux/store";
-import {net} from "common";
 import {useParams} from "react-router-dom";
 import {hot} from "react-hot-loader/root";
-import {Navbar, NavbarBrand} from "reactstrap";
-import {ServerIcon} from "../ServerIcon";
-import Server = net.octyl.ourtwobe.Server;
+import {useGuildPipe} from "../../firebase/pipes/common";
 
 interface ServerProps {
-    serverId: string
+    guildId: string;
 }
 
-const Server: React.FC<ServerProps> = ({serverId}) => {
-    const server = useSelector((state: LocalState) =>
-        (state.userInfo.profile?.servers ?? [])
-            .find(value => value.id === serverId)
-    );
-    if (!server) {
+const Server: React.FC<ServerProps> = ({guildId}) => {
+    const guild = useGuildPipe(guildId);
+    if (!guild) {
         return <></>;
     }
     return <div>
@@ -43,11 +35,11 @@ const Server: React.FC<ServerProps> = ({serverId}) => {
 };
 
 const SpecificServer: React.FC = () => {
-    const {serverId} = useParams();
-    if (typeof serverId === "undefined") {
+    const {guildId} = useParams();
+    if (typeof guildId === "undefined") {
         return <></>;
     }
-    return <Server serverId={serverId}/>;
+    return <Server guildId={guildId}/>;
 };
 
 export default hot(SpecificServer);

@@ -1,5 +1,5 @@
 plugins {
-    val ktVersion = "1.4-M2-eap-12"
+    val ktVersion = "1.4-M3"
     id("com.techshroom.incise-blue") version "0.5.7"
     kotlin("jvm") version ktVersion apply false
     kotlin("multiplatform") version ktVersion apply false

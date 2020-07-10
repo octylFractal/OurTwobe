@@ -19,218 +19,117 @@
 package net.octyl.ourtwobe
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.firestore.Firestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.cloud.FirestoreClient
-import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
-import discord4j.core.`object`.util.Image
-import discord4j.core.`object`.util.Snowflake
-import discord4j.core.event.domain.guild.MemberJoinEvent
-import discord4j.core.event.domain.guild.MemberLeaveEvent
-import io.javalin.Javalin
-import io.javalin.apibuilder.ApiBuilder.post
-import io.javalin.http.BadRequestResponse
-import io.javalin.http.UnauthorizedResponse
-import io.javalin.plugin.json.JavalinJackson
-import io.javalin.plugin.openapi.OpenApiOptions
-import io.javalin.plugin.openapi.OpenApiPlugin
-import io.javalin.plugin.openapi.dsl.document
-import io.javalin.plugin.openapi.dsl.documented
-import io.swagger.v3.oas.models.info.Info
+import discord4j.core.event.domain.guild.GuildCreateEvent
+import discord4j.core.event.domain.lifecycle.DisconnectEvent
+import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.event.domain.message.MessageCreateEvent
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitSingle
+import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.eclipse.jetty.http.HttpHeader
-import org.eclipse.jetty.http.HttpStatus
+import net.octyl.ourtwobe.pipe.GuildDataPipe
+import net.octyl.ourtwobe.pipe.GuildUsersPipe
+import net.octyl.ourtwobe.pipe.ProfilePipe
+import net.octyl.ourtwobe.pipe.VoiceChannelDataPipe
+import net.octyl.ourtwobe.pipe.VoiceStatePipe
+import reactor.core.scheduler.Schedulers
 import java.nio.file.Files
 import java.nio.file.Path
 
 private val LOGGER = KotlinLogging.logger {}
 
-fun main() {
-    val discordToken = Files.readString(Path.of("./secrets/discord-token.txt")).trim()
-    val bot = DiscordClientBuilder.create(discordToken).build()
-    bot.login()
-    val scope = CoroutineScope(Dispatchers.Default + CoroutineName("OurTwobeMain"))
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+suspend fun main() {
+    LOGGER.info("Spinning up Ourtwobe...")
+    val discordToken = withContext(Dispatchers.IO) {
+        Files.readString(Path.of("./secrets/discord-token.txt")).trim()
+    }
+    val bot = DiscordClientBuilder.create(discordToken)
+        // we use coroutines for all of our work, which switch threads anyways
+        .setEventScheduler(Schedulers.immediate())
+        .build()
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineName("OurTwobeMain"))
 
     val firebase = initFirebase()
     val firestore: Firestore = FirestoreClient.getFirestore(firebase)
 
-    scope.launch {
-        updateGuildsInDatabase(bot, firestore)
-    }
-
-    val app = Javalin.create {
-        it.showJavalinBanner = false
-        it.registerPlugin(OpenApiPlugin(
-            OpenApiOptions(
-                Info()
-                    .title("OurTwobe")
-                    .version("1.0.0")
-                    .description("The second coming of OurTube")
-            )
-                .ignorePath("/.meta/*")
-                .path("/.meta/docs/api")
-        ))
-    }
-    JavalinJackson.configure(JACKSON)
-    val client = OkHttpClient.Builder().build()
-    app.routes {
-        addReDocRoute()
-        post("/login/discord", documented(
-            document()
-                .operation {
-                    it.summary("Login via Discord")
-                    it.description("Exchanges a Discord OAuth token for a Firebase custom token")
-                }
-                .body<TokenHolder> {
-                    it.description("A Discord OAuth token")
-                }
-                .result<TokenHolder>("200") {
-                    it.description("A Firebase custom token")
-                }
-                .result<ApiError>("400") {
-                    it.description("Bad request.")
-                }
-        ) { ctx ->
-            val tokenHolder = try {
-                ctx.req.inputStream.use { JACKSON.readValue<TokenHolderImpl>(it) }
-            } catch (e: JsonProcessingException) {
-                throw BadRequestResponse("Failed to deserialize token")
-            }
-            val response = client.newCall(Request.Builder()
-                    .get().url("https://discordapp.com/api/v6/users/@me")
-                    .header(HttpHeader.AUTHORIZATION.toString(), "Bearer " + tokenHolder.token)
-                    .build())
-                .execute()
-            if (!response.isSuccessful) {
-                if (response.code == 401) {
-                    throw UnauthorizedResponse()
-                }
-                throw BadRequestResponse(response.body?.string() ?: "Unknown error with Discord")
-            }
-            val body = response.body ?: error("No body given")
-            val discordUser = body.charStream().use {
-                JACKSON.readValue<DiscordUser>(it)
-            }
-            scope.launch {
-                saveProfileToDatabase(bot, firestore, discordUser)
-            }
-            ctx.status(HttpStatus.OK_200)
-            ctx.json(TokenHolderImpl(FirebaseAuth.getInstance(firebase).createCustomToken(
-                discordUser.id
-            )))
-        })
-    }
-    app.exception(BadRequestResponse::class.java) { err, ctx ->
-        ctx.json(ApiError("bad.request", err.message ?: "Unknown error"))
-    }
-    app.exception(UnauthorizedResponse::class.java) { err, ctx ->
-        ctx.json(ApiError("not.authorized", err.message ?: "Unknown error"))
-    }
-    app.start(13445)
-}
-
-suspend fun updateGuildsInDatabase(bot: DiscordClient, firestore: Firestore) {
-    val collection = firestore.collection("guilds")
-
-    suspend fun addMember(guildId: Snowflake, memberId: Snowflake) {
-        try {
-            collection.document(guildId.asString())
-                .collection("members")
-                .document(memberId.asString())
-                .set(mapOf("exists" to true))
-                .await()
-        } catch (e: Exception) {
-            LOGGER.warn(e) { "Failed to add member $memberId to guild $guildId" }
-        }
-    }
-
-    suspend fun removeMember(guildId: Snowflake, memberId: Snowflake) {
-        try {
-            collection.document(guildId.asString())
-                .collection("members")
-                .document(memberId.asString())
-                .delete()
-                .await()
-        } catch (e: Exception) {
-            LOGGER.warn(e) { "Failed to remove member $memberId from guild $guildId" }
-        }
-    }
-
     coroutineScope {
-        bot.guilds
-            .flatMap { guild -> guild.members.map { member -> guild.id to member.id } }
-            .asFlow()
-            .collect { (guildId, memberId) ->
-                addMember(guildId, memberId)
+        val pipes = listOf(
+            GuildDataPipe(firestore),
+            GuildUsersPipe(firestore),
+            ProfilePipe(firestore),
+            VoiceChannelDataPipe(firestore),
+            VoiceStatePipe(firestore),
+        )
+
+        for (pipe in pipes) {
+            // async-launch all of the pipes
+            launch {
+                // but remember to start them in the outer scope so they don't hold up initialization
+                pipe.start(scope, bot)
             }
-        launch {
-            bot.eventDispatcher.on<MemberJoinEvent>()
-                .asFlow()
-                .collect {
-                    addMember(it.guildId, it.member.id)
-                }
-        }
-        launch {
-            bot.eventDispatcher.on<MemberLeaveEvent>()
-                .asFlow()
-                .collect {
-                    removeMember(it.guildId, it.user.id)
-                }
         }
     }
-}
 
-suspend fun saveProfileToDatabase(bot: DiscordClient, firestore: Firestore, discordUser: DiscordUser) {
-    val discordUserSnowflake = Snowflake.of(discordUser.id)
-    val guilds = bot.guilds
-        .filterWhen { guild ->
-            guild.members.any { it.id == discordUserSnowflake }
-        }
-        .map { ServerImpl(it.id.asString(), it.name, it.getIconUrl(Image.Format.PNG).orElse(null)) }
-        .collectList()
-        .awaitSingle()
-        .toTypedArray<Server>()
-    firestore.collection("profiles").document(discordUser.id).set(
-        UserProfileImpl(
-            discordUser.username,
-            avatarUrl(discordUser.id, discordUser.avatar),
-            guilds
-        ).convertToMapViaJackson()
-    ).await()
-}
-
-private fun avatarUrl(uid: String, avatar: String): String {
-    val ext = when {
-        avatar.startsWith("a_") -> "gif"
-        else -> "png"
+    scope.launch {
+        bot.eventDispatcher.on<MessageCreateEvent>()
+            .filter { event ->
+                event.guildId.isEmpty &&
+                    event.message.author.orElse(null)?.id != bot.selfId.orElseThrow()
+            }
+            .collect {
+                it.message.channel
+                    .flatMap { channel -> channel.createMessage("~no u~") }
+                    .awaitFirst()
+            }
     }
-    return "https://cdn.discordapp.com/avatars/$uid/$avatar.$ext"
+    scope.launch {
+        bot.eventDispatcher.on<ReadyEvent>()
+            .onEach {
+                LOGGER.info { "Connected to Discord!" }
+            }
+            .flatMapConcat {
+                bot.eventDispatcher.on<GuildCreateEvent>()
+                    .take(it.guilds.size)
+            }
+            .collect {
+                LOGGER.info { "Connected to guild: '${it.guild.name}' (${it.guild.id})" }
+            }
+    }
+    scope.launch {
+        bot.eventDispatcher.on<DisconnectEvent>()
+            .collect {
+                LOGGER.warn { "Disconnected from Discord :(" }
+            }
+    }
+    bot.login()
+        .asFlow()
+        .catch {
+            LOGGER.error(it) { "Error logging in to discord" }
+        }
+        .launchIn(scope)
+
+    serveApi(FirebaseAuth.getInstance(firebase))
 }
-
-class UserProfileImpl(
-    override val username: String,
-    override val avatarUrl: String,
-    override val servers: Array<Server>
-) : UserProfile
-
-class ServerImpl(
-    override val id: String,
-    override val name: String,
-    override val iconUrl: String?
-) : Server
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class DiscordUser(

@@ -21,7 +21,6 @@ import "firebase/analytics";
 import "firebase/auth";
 import "firebase/firestore";
 import {pushUidToStore} from "./redux-init";
-import {setupProfileHook} from "./profile";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDQ5-304MuuKVxSbuqhNC_sBGNCkDEpLHY",
@@ -42,7 +41,7 @@ firebaseApp.firestore().enablePersistence()
         } else if (err.code == 'unimplemented') {
             return;
         } else {
-            console.warn("Failed to enable persistence", err.code)
+            console.warn("Failed to enable persistence", err.code);
         }
     });
 
@@ -58,6 +57,4 @@ auth.getRedirectResult()
     .catch(err => {
         console.info(err);
     });
-
-setupProfileHook()
 

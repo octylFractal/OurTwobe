@@ -30,4 +30,4 @@ export type LocalState = StoreToState<typeof store>;
 
 export const state$ =
     // little hack to work around rxjs types being a pain
-    from(store as any as InteropObservable<LocalState>)
+    from(store as unknown as InteropObservable<LocalState>);

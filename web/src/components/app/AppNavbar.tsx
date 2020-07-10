@@ -26,10 +26,7 @@ import {LocalServerDropdown} from "../LocalServerDropdown";
 
 export const AppNavbar: React.FC = () => {
     const [isOpen, setOpen] = useState(false);
-
-    function toggle() {
-        setOpen(!isOpen);
-    }
+    const toggle = () => void setOpen(prevState => !prevState);
 
     return <Navbar color="dark" dark expand="md">
         <NavbarBrand href="/" className="py-3 pl-0">

@@ -16,15 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
+import React, {ReactNode} from "react";
 import {Alert, Modal, ModalHeader} from "reactstrap";
 
 interface SimpleErrorBoundaryProps extends React.PropsWithChildren<{}> {
-    context?: string
+    context?: string;
 }
 
 interface SimpleErrorBoundaryState {
-    error?: Error
+    error?: Error;
 }
 
 export class SimpleErrorBoundary extends React.Component<SimpleErrorBoundaryProps, SimpleErrorBoundaryState> {
@@ -39,7 +39,7 @@ export class SimpleErrorBoundary extends React.Component<SimpleErrorBoundaryProp
         };
     }
 
-    render() {
+    render(): ReactNode {
         if (typeof this.state.error !== "undefined") {
             const error = this.state.error;
             return <Modal isOpen backdrop="static" size="xl">

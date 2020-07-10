@@ -47,7 +47,7 @@ const Splash: React.FC = () => {
             </a>
             !
         </p>
-    </div>
+    </div>;
 };
 
 export default hot(Splash);

@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {User} from "firebase";
+import {User} from "firebase/app";
 import {userInfo} from "../redux/reducer";
 import {store} from "../redux/store";
 
-export function pushUidToStore(user: User | null) {
+export function pushUidToStore(user: User | null): void {
     store.dispatch(user === null ? userInfo.logout() : userInfo.login(user.uid));
 }

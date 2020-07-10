@@ -26,11 +26,11 @@ import {connect} from "react-redux";
 import {LocalState} from "../../redux/store";
 
 interface LoginHandlerProps {
-    loggedIn: boolean
+    loggedIn: boolean;
 }
 
 const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
-    const [failed, setFailed] = useState(false)
+    const [failed, setFailed] = useState(false);
     useEffect(() => {
         const hashData = queryString.parse(window.location.hash) as DiscordLoginData;
         const knownState = localStorage.getItem(LS_CONSTANTS.DISCORD_AUTH_STATE);
@@ -56,7 +56,7 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
     }
     return <div>
         Please hold, logging you in...
-    </div>
+    </div>;
 };
 
 export default hot(connect((state: LocalState) => ({
@@ -64,9 +64,9 @@ export default hot(connect((state: LocalState) => ({
 }))(LoginHandler));
 
 interface DiscordLoginData {
-    access_token: string
-    state: string
+    access_token: string;
+    state: string;
 
     // anything else is still ok
-    [k: string]: any
+    [k: string]: unknown;
 }

@@ -1,8 +1,8 @@
 interface SecureRandom {
 
-    randomArray(byteCount: number): Array<number>
+    randomArray(byteCount: number): Array<number>;
 
-    randomUint8Array(byteCount: number): Uint8Array
+    randomUint8Array(byteCount: number): Uint8Array;
 }
 
 declare const secureRandom: SecureRandom;

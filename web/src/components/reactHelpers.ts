@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {useRef} from "react";
+import {useState} from "react";
 
-export function useRandomId() {
-    return useRef(() => Math.random());
+export function useRandomId(name = "random"): string {
+    return useState(() => `${name}-${Math.random()}`)[0];
 }

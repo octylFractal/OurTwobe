@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-async function initialize() {
+async function initialize(): Promise<void> {
     await import(/* webpackPreload: true */ "./bootstrap");
 }
 

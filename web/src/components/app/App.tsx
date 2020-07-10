@@ -36,7 +36,7 @@ const HotPortion = hot(() => {
     return <SimpleErrorBoundary context="the application root">
         <AppNavbar/>
         <Switch>
-            <Route path="/server/:serverId/">
+            <Route path="/guild/:guildId/">
                 <ServerNavbarLazy/>
             </Route>
         </Switch>
@@ -45,7 +45,7 @@ const HotPortion = hot(() => {
                 <Route path="/discord/">
                     <LoginHandlerLazy/>
                 </Route>
-                <Route path="/server/:serverId">
+                <Route path="/guild/:guildId">
                     <ServerLazy/>
                 </Route>
                 <Route path="/">
@@ -56,7 +56,7 @@ const HotPortion = hot(() => {
     </SimpleErrorBoundary>;
 });
 
-export const App = () => {
+export const App: React.FC = () => {
     return <Router>
         <ScrollToTop/>
         <Provider store={store}>

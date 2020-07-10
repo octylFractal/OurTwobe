@@ -1,3 +1,4 @@
+/* eslint-env node */
 const path = require('path');
 const fs = require('fs');
 const process = require('process');
@@ -10,10 +11,10 @@ const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
-const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const {TsconfigPathsPlugin} = require('tsconfig-paths-webpack-plugin');
 
-const resolveExtensions = ['.ts', '.tsx', '.js']
+const resolveExtensions = ['.ts', '.tsx', '.js'];
 const commonConfig = {
     entry: './src/index.ts',
     devtool: 'source-map',
@@ -28,7 +29,6 @@ const commonConfig = {
         }),
         new ForkTsCheckerWebpackPlugin({
             silent: true,
-            useTypescriptIncrementalApi: false,
         }),
         new FaviconsWebpackPlugin({
             logo: "./src/app/logo.png",
@@ -41,7 +41,7 @@ const commonConfig = {
         rules: [
             {
                 test: /\.tsx?$/,
-                exclude: /node_modules/,
+                include: path.resolve(__dirname, 'src'),
                 use: [
                     {
                         loader: 'babel-loader',
@@ -55,11 +55,14 @@ const commonConfig = {
                             transpileOnly: true,
                         },
                     },
+                    {
+                        loader: 'eslint-loader',
+                    },
                 ],
-                include: path.resolve(__dirname, 'src'),
             },
             {
                 test: /\.s[ac]ss$/i,
+                include: path.resolve(__dirname, 'src'),
                 use: [
                     'style-loader',
                     { loader: 'css-loader', options: { importLoaders: 1 } },
@@ -69,6 +72,7 @@ const commonConfig = {
             },
             {
                 test: /\.(png|svg|jpg|gif)$/,
+                include: path.resolve(__dirname, 'src'),
                 use: [
                     'file-loader',
                 ],
@@ -88,14 +92,6 @@ const commonConfig = {
     },
     stats: {
         chunks: true,
-    },
-    optimization: {
-        moduleIds: "hashed",
-        runtimeChunk: "single",
-        minimizer: [
-            new TerserJSPlugin(),
-            new OptimizeCSSAssetsPlugin(),
-        ],
     },
 };
 
@@ -147,6 +143,11 @@ module.exports = (env, argv) => {
             optimization: {
                 namedChunks: true,
                 moduleIds: 'hashed',
+                runtimeChunk: "single",
+                minimizer: [
+                    new TerserJSPlugin(),
+                    new OptimizeCSSAssetsPlugin(),
+                ],
                 splitChunks: {
                     chunks: 'all',
                     maxAsyncRequests: 50,
@@ -173,6 +174,7 @@ module.exports = (env, argv) => {
                             name(module) {
                                 const file = module.context;
                                 let currentDir = file;
+                                // eslint-disable-next-line no-constant-condition
                                 while (true) {
                                     while (!fs.existsSync(path.resolve(currentDir, 'package.json'))) {
                                         if (currentDir.indexOf('node_modules') < 0) {

@@ -20,7 +20,7 @@ import React, {ReactNode} from "react";
 import {NavLink, NavLinkProps} from "react-router-dom";
 
 export interface RoutedNavLinkProps extends NavLinkProps {
-    children?: ReactNode
+    children?: ReactNode;
 }
 
 const RoutedNavLink: React.FC<RoutedNavLinkProps> = ({children, ...props}) => {

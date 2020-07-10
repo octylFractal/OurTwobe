@@ -21,10 +21,10 @@ import {NavLink} from "react-router-dom";
 import {DropdownItem} from "reactstrap";
 
 export interface RoutedDropdownLinkProps {
-    to: string
-    exact?: boolean
-    className?: string
-    children?: ReactNode
+    to: string;
+    exact?: boolean;
+    className?: string;
+    children?: ReactNode;
 }
 
 export const RoutedDropdownLink: React.FC<RoutedDropdownLinkProps> = (props) => {

@@ -17,36 +17,30 @@
  */
 
 import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {net} from "common";
-import UserProfile = net.octyl.ourtwobe.UserProfile;
 
 export interface UserInfoRecord {
-    readonly heardFromFirebase: boolean
-    readonly uid?: string
-    readonly profile?: UserProfile
+    readonly heardFromFirebase: boolean;
+    readonly uid?: string;
 }
 
-const {actions: userInfoActions, reducer: userInfo} = createSlice({
+const {actions: userInfo, reducer: userInfoSlice} = createSlice({
     name: "userInfo",
     initialState: {
         heardFromFirebase: false
     } as UserInfoRecord,
     reducers: {
-        login(state, action: PayloadAction<string>) {
+        login(state, {payload}: PayloadAction<string>): void {
             state.heardFromFirebase = true;
-            state.uid = action.payload;
+            state.uid = payload;
         },
-        setProfile(state, action: PayloadAction<UserProfile | undefined>) {
-            state.profile = action.payload;
+        logout(): UserInfoRecord {
+            return {heardFromFirebase: true};
         },
-        logout() {
-            return {heardFromFirebase: true, servers: []};
-        }
     }
 });
 
-export {userInfoActions as userInfo};
+export {userInfo};
 
 export const reducer = combineReducers({
-    userInfo
+    userInfo: userInfoSlice,
 });

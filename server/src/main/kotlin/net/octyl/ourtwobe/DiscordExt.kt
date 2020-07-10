@@ -18,8 +18,25 @@
 
 package net.octyl.ourtwobe
 
+import discord4j.core.DiscordClient
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
-import reactor.core.publisher.Flux
+import discord4j.core.event.domain.guild.GuildCreateEvent
+import discord4j.core.event.domain.lifecycle.ReadyEvent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.reactive.asFlow
 
-inline fun <reified E : Event> EventDispatcher.on(): Flux<E> = on(E::class.java)
+inline fun <reified E : Event> EventDispatcher.on(): Flow<E> = on(E::class.java).asFlow()
+
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+fun DiscordClient.initialGuildCreateFlow(): Flow<GuildCreateEvent> =
+    eventDispatcher.on<ReadyEvent>()
+        .take(1)
+        .flatMapConcat { event ->
+            eventDispatcher.on<GuildCreateEvent>()
+                .take(event.guilds.size)
+        }
