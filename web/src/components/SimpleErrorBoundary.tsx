@@ -19,7 +19,7 @@
 import React, {ReactNode} from "react";
 import {Alert, Modal, ModalHeader} from "reactstrap";
 
-interface SimpleErrorBoundaryProps extends React.PropsWithChildren<{}> {
+interface SimpleErrorBoundaryProps extends React.PropsWithChildren<Record<string, unknown>> {
     context?: string;
 }
 

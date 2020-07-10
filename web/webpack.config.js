@@ -27,9 +27,7 @@ const commonConfig = {
         new ScriptExtHtmlWebpackPlugin({
             defaultAttribute: 'defer',
         }),
-        new ForkTsCheckerWebpackPlugin({
-            silent: true,
-        }),
+        new ForkTsCheckerWebpackPlugin(),
         new FaviconsWebpackPlugin({
             logo: "./src/app/logo.png",
             inject: true,
@@ -104,7 +102,7 @@ const modulesThatAreJustTooBig = [
 module.exports = (env, argv) => {
     if (typeof argv !== 'undefined' && argv['mode'] === 'production') {
         process.env.NODE_ENV = "production";
-        return merge(commonConfig, {
+        return merge.merge(commonConfig, {
             plugins: [
                 new MiniCssExtractPlugin({
                     filename: '[name].css',
@@ -203,7 +201,7 @@ module.exports = (env, argv) => {
             },
         });
     }
-    return merge(commonConfig, {
+    return merge.merge(commonConfig, {
         mode: 'development',
         devServer: {
             port: 13444,

@@ -1,17 +1,19 @@
 import {collectionChanges, collectionData} from "rxfire/firestore";
-import {flatMap, map, tap} from "rxjs/operators";
+import {concatMap, map, tap} from "rxjs/operators";
 import produce, {castDraft} from "immer";
 import {logErrorAndRetry} from "../rx/observer";
-import {firestore} from "firebase";
+import {firestore} from "firebase/app";
 import {Dispatch, SetStateAction} from "react";
 
-export function attachFirebase<V extends object>(typeDesc: string,
-                                                 collection: firestore.Query,
-                                                 keyExtractor: (data: V) => string,
-                                                 setDataMap: Dispatch<SetStateAction<Record<string, V>>>): () => void {
+export function attachFirebase<V>(
+    typeDesc: string,
+    collection: firestore.Query,
+    keyExtractor: (data: V) => string,
+    setDataMap: Dispatch<SetStateAction<Record<string, V>>>
+): () => void {
     const handle = collectionData<V>(collection)
         .pipe(
-            flatMap(data => data),
+            concatMap(data => data),
             tap(data =>
                 setDataMap(dataMap => produce(dataMap, draft => {
                     draft[keyExtractor(data)] = castDraft(data);
@@ -22,7 +24,7 @@ export function attachFirebase<V extends object>(typeDesc: string,
         .subscribe();
     const handle2 = collectionChanges(collection, ['removed'])
         .pipe(
-            flatMap(snapshots => snapshots),
+            concatMap(snapshots => snapshots),
             map(snapshot => keyExtractor(snapshot.doc.data() as V)),
             tap(data =>
                 setDataMap(dataMap => produce(dataMap, draft => {

@@ -48,13 +48,10 @@ export function generateOAuthLink(): string {
     const state = fromByteArray(randomStateArray);
     localStorage.setItem(LS_CONSTANTS.DISCORD_AUTH_STATE, state);
     return baseUrl + '?' + queryString.stringify({
-        // These must be written as they are
-        /* eslint-disable @typescript-eslint/camelcase */
         response_type: 'token',
         client_id: clientId,
         state: state,
         scope: 'guilds identify',
-        redirect_uri: redirectUri
-        /* eslint-enable @typescript-eslint/camelcase */
+        redirect_uri: redirectUri,
     });
 }
