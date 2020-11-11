@@ -19,10 +19,12 @@
 package net.octyl.ourtwobe.youtube.audio
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.retry
+import mu.KotlinLogging
 import net.octyl.ourtwobe.ffmpeg.AvioCallbacks
 import net.octyl.ourtwobe.ffmpeg.FFmpegOpusReencoder
 import java.nio.ByteBuffer
@@ -30,18 +32,26 @@ import java.nio.channels.Channels
 
 object YouTubeOpusAudioBufferSource {
 
+    private val logger = KotlinLogging.logger { }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     fun provideAudio(id: String): Flow<ByteBuffer> {
         return flow {
             YouTubeDlProcessBinding(id).use { ytdl ->
+                val channel = Channels.newChannel(ytdl.process.inputStream)
                 FFmpegOpusReencoder(
                     id,
-                    AvioCallbacks.forChannel(Channels.newChannel(ytdl.process.inputStream))
+                    AvioCallbacks.forChannel(channel)
                 ).use {
                     emitAll(it.recode())
                 }
             }
         }
+            .retry(5) {
+                logger.info(it) { "Failed to play $id, retrying..." }
+                delay(1000)
+                true
+            }
     }
 
 }

@@ -24,13 +24,14 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import net.dv8tion.jda.api.audio.OpusPacket
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext
 import org.bytedeco.ffmpeg.avcodec.AVPacket
+import org.bytedeco.ffmpeg.avutil.AVAudioFifo
 import org.bytedeco.ffmpeg.avutil.AVDictionary
 import org.bytedeco.ffmpeg.avutil.AVFrame
-import org.bytedeco.ffmpeg.global.avcodec
 import org.bytedeco.ffmpeg.global.avcodec.av_packet_alloc
 import org.bytedeco.ffmpeg.global.avcodec.av_packet_free
 import org.bytedeco.ffmpeg.global.avcodec.av_packet_unref
@@ -46,9 +47,29 @@ import org.bytedeco.ffmpeg.global.avformat.avformat_alloc_context
 import org.bytedeco.ffmpeg.global.avformat.avformat_find_stream_info
 import org.bytedeco.ffmpeg.global.avformat.avformat_free_context
 import org.bytedeco.ffmpeg.global.avformat.avformat_open_input
-import org.bytedeco.ffmpeg.global.avutil.*
-import org.bytedeco.ffmpeg.presets.avutil
+import org.bytedeco.ffmpeg.global.avutil.AVERROR_EAGAIN
+import org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF
+import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_AUDIO
+import org.bytedeco.ffmpeg.global.avutil.AV_CH_LAYOUT_STEREO
+import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16
+import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_alloc
+import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_free
+import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_read
+import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_size
+import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_write
+import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
+import org.bytedeco.ffmpeg.global.avutil.av_frame_free
+import org.bytedeco.ffmpeg.global.avutil.av_frame_get_buffer
+import org.bytedeco.ffmpeg.global.avutil.av_frame_make_writable
+import org.bytedeco.ffmpeg.global.avutil.av_frame_ref
+import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
+import org.lwjgl.util.opus.Opus.OPUS_APPLICATION_AUDIO
+import org.lwjgl.util.opus.Opus.OPUS_OK
+import org.lwjgl.util.opus.Opus.opus_encode
+import org.lwjgl.util.opus.Opus.opus_encoder_create
+import org.lwjgl.util.opus.Opus.opus_encoder_destroy
+import org.lwjgl.util.opus.Opus.opus_strerror
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
@@ -66,11 +87,13 @@ class FFmpegOpusReencoder(
     private val ctx = closer.register(avformat_alloc_context(), { s -> avformat_free_context(s) })
         ?: error("Unable to allocate context")
     private val decoderCtx: AVCodecContext
-    private val encoderCtx: AVCodecContext
     private val frame: AVFrame
     private val packet: AVPacket
     private val audioStreamIndex: Int
     private val resampler: Resampler
+    private val audioFifo: AVAudioFifo
+    private val outputFrame: AVFrame
+    private val opus: Long
     private val closed = AtomicBoolean()
     private fun closeSilently(cause: Throwable) {
         try {
@@ -102,44 +125,8 @@ class FFmpegOpusReencoder(
 
             val audioStream = ctx.streams(audioStreamIndex)
 
-            val codec = avcodec.avcodec_find_encoder(avcodec.AV_CODEC_ID_OPUS)
-                ?: error("Could not find encoder for " + avcodec.avcodec_get_name(avcodec.AV_CODEC_ID_OPUS))
-
-            val supportedFmts = codec.sample_fmts()
-            val desiredFormat = generateSequence(0L) { it + 1 }
-                .map { supportedFmts[it] }
-                .takeWhile { fmt -> fmt != -1 }
-                .maxByOrNull { fmt ->
-                    val bytes = av_get_bytes_per_sample(fmt)
-                    val planar = when (av_get_planar_sample_fmt(fmt)) {
-                        0 -> 0
-                        else -> 1
-                    }
-                    val baseScore = when (bytes) {
-                        // prefer 2 bytes / 16 bits (our current format)
-                        2 -> Int.MAX_VALUE
-                        else -> bytes * 2
-                    }
-
-                    // prefer non-planar slightly
-                    baseScore - planar
-                } ?: error("No formats available")
-
-            encoderCtx = closer.register(
-                avcodec_alloc_context3(codec),
-                { avctx -> avcodec_free_context(avctx) }
-            ) ?: error("Unable to allocate codec context")
+            val desiredFormat = AV_SAMPLE_FMT_S16
             val sampleRate = OpusPacket.OPUS_SAMPLE_RATE
-            encoderCtx
-                .sample_fmt(desiredFormat)
-                .sample_rate(sampleRate)
-                .channels(2)
-                .channel_layout(AV_CH_LAYOUT_STEREO)
-                .frame_size(OpusPacket.OPUS_FRAME_SIZE)
-                .time_base(av_make_q(1, sampleRate))
-
-            error = avcodec_open2(encoderCtx, codec, null as AVDictionary?)
-            check(error == 0) { "Unable to open encoder: " + avErr2Str(error) }
 
             resampler = closer.register(Resampler(
                 Format(
@@ -149,9 +136,9 @@ class FFmpegOpusReencoder(
                     sampleRate = audioStream.codecpar().sample_rate()
                 ),
                 Format(
-                    channelLayout = encoderCtx.channel_layout(),
-                    sampleFormat = encoderCtx.sample_fmt(),
-                    timeBase = encoderCtx.time_base(),
+                    channelLayout = AV_CH_LAYOUT_STEREO,
+                    sampleFormat = desiredFormat,
+                    timeBase = audioStream.time_base(),
                     sampleRate = sampleRate
                 )
             ))
@@ -180,7 +167,39 @@ class FFmpegOpusReencoder(
                 { pkt-> av_packet_free(pkt) }
             ) ?: error("Unable to allocate packet")
 
+            val encoderFrameSize = 960
+
+            audioFifo = closer.register(
+                av_audio_fifo_alloc(desiredFormat, 2, encoderFrameSize),
+                { fifo -> av_audio_fifo_free(fifo) }
+            ) ?: error("Unable to allocate FIFO")
+
+            outputFrame = closer.register(
+                av_frame_alloc(),
+                { frame -> av_frame_free(frame) }
+            ) ?: error("Unable to allocate frame")
+            outputFrame.format(desiredFormat)
+                .nb_samples(encoderFrameSize)
+                .channel_layout(AV_CH_LAYOUT_STEREO)
+
+            error = av_frame_get_buffer(outputFrame, 0)
+            if (error != 0) {
+                throw IOException("Unable to prepare frame: " + avErr2Str(error))
+            }
+
             decoderCtx.pkt_timebase(audioStream.time_base())
+
+            MemoryStack.stackPush().use { stack ->
+                val errors = stack.mallocInt(1)
+                val opus = opus_encoder_create(sampleRate, 2, OPUS_APPLICATION_AUDIO, errors)
+                if (errors[0] != OPUS_OK) {
+                    throw IOException("Unable to create Opus encoder: ${opus_strerror(errors[0])}")
+                }
+                this.opus = closer.register(
+                    opus,
+                    { opus_encoder_destroy(it) }
+                )
+            }
         } catch (t: Throwable) {
             closeSilently(t)
             throw t
@@ -202,6 +221,9 @@ class FFmpegOpusReencoder(
                     } finally {
                         av_frame_free(it)
                     }
+                }
+                .onCompletion {
+                    emitAll(writePacket(null))
                 }
     }
 
@@ -232,30 +254,52 @@ class FFmpegOpusReencoder(
         }
     }
 
-    private fun writePacket(frame: AVFrame): Flow<ByteBuffer> {
+    private fun writePacket(frame: AVFrame?): Flow<ByteBuffer> {
         return flow {
-            var error = avcodec.avcodec_send_frame(encoderCtx, frame)
-            if (error != 0) {
-                throw IOException("Unable to encode frame: " + avErr2Str(error))
+            var error: Int
+            if (frame != null) {
+                error = av_audio_fifo_write(audioFifo, frame.data(), frame.nb_samples())
+                if (error < 0) {
+                    throw IOException("Unable to write frame to FIFO: " + avErr2Str(error))
+                }
+                if (av_audio_fifo_size(audioFifo) < outputFrame.nb_samples()) {
+                    // not enough to do encoding yet, ask for more
+                    return@flow
+                }
             }
-            val outputPacket = av_packet_alloc()
             while (true) {
-                error = avcodec.avcodec_receive_packet(encoderCtx, outputPacket)
-                if (error == avutil.AVERROR_EAGAIN() || error == AVERROR_EOF) {
-                    // need more input!
+                val size = av_audio_fifo_size(audioFifo)
+                if (size < outputFrame.nb_samples()) {
                     break
                 }
-                if (error < 0) {
-                    throw IOException("Error encoding audio frame: " + avErr2Str(error))
+                error = av_frame_make_writable(outputFrame)
+                if (error != 0) {
+                    throw IOException("Unable to prepare frame: " + avErr2Str(error))
                 }
-                val buffer = MemoryUtil.memByteBuffer(outputPacket.buf().data().address(), outputPacket.buf().size())
-                val dataCopy = ByteBuffer.allocate(buffer.remaining())
-                dataCopy.put(buffer)
-                dataCopy.flip()
-                emit(dataCopy)
-                av_packet_unref(outputPacket)
+
+                error = av_audio_fifo_read(audioFifo, outputFrame.data(), outputFrame.nb_samples())
+                if (error < 0) {
+                    throw IOException("Unable to read frame: " + avErr2Str(error))
+                }
+
+                MemoryStack.stackPush().use { stack ->
+                    val data = stack.malloc(4096)
+                    val result = opus_encode(
+                        opus,
+                        MemoryUtil.memShortBuffer(outputFrame.data()[0].address(), outputFrame.linesize(0)),
+                        outputFrame.nb_samples(),
+                        data
+                    )
+                    if (result < 0) {
+                        throw IOException("Opus encode error: ${opus_strerror(result)}")
+                    }
+                    data.limit(result)
+                    val dataCopy = ByteBuffer.allocate(data.remaining())
+                    dataCopy.put(data)
+                    dataCopy.flip()
+                    emit(dataCopy)
+                }
             }
-            av_packet_free(outputPacket)
         }
     }
 

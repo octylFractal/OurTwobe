@@ -14,9 +14,10 @@ inciseBlue {
         javaVersion = JavaVersion.VERSION_15
     }
     lwjgl {
-        lwjglVersion = "3.2.3"
+        lwjglVersion = "3.2.4-SNAPSHOT"
         addDependency("", true)
         addDependency("jemalloc", true)
+        addDependency("opus", true)
     }
 }
 

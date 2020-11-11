@@ -20,22 +20,18 @@ package net.octyl.ourtwobe.discord
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.channels.sendBlocking
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.audio.SpeakingMode
@@ -46,6 +42,7 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.GuildSettingsHolder
+import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.datapipe.QueueManager
 import net.octyl.ourtwobe.discord.audio.QueueSendHandler
 import net.octyl.ourtwobe.util.exhaustive
@@ -57,7 +54,7 @@ class QueuePlayer(
     private val queueManager: QueueManager,
     private val guildSettingsHolder: GuildSettingsHolder,
 ) {
-    private val logger = KotlinLogging.logger { }
+    private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
     private val messaging = Channel<PlayerCommand>(Channel.BUFFERED)
     private val _events = MutableStateFlow<DataPipeEvent.ProgressItem?>(null)
     val events: StateFlow<DataPipeEvent.ProgressItem?> = _events
@@ -120,39 +117,44 @@ class QueuePlayer(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun drainQueue(channel: VoiceChannel) {
-        while (coroutineContext.isActive) {
-            val nextItem = coroutineScope {
-                queueManager.remove(produce {
-                    val updates = channelFlow {
-                        send(Unit)
-                        val listener = object {
-                            @SubscribeEvent
-                            fun onVoiceUpdate(event: GenericGuildVoiceEvent) {
-                                if (event.guild.id == guildId) {
-                                    sendBlocking(Unit)
-                                }
-                            }
-                        }
-                        jda.addEventListener(listener)
-                        invokeOnClose {
-                            jda.removeEventListener(listener)
-                        }
-                        delay(Long.MAX_VALUE)
-                    }
-                    updates.collect {
-                        send(channel.members.mapTo(mutableSetOf()) { it.id })
-                    }
-                })
-            }
-            logger.info("Playing '${nextItem.title}' (${nextItem.youtubeId})")
-            try {
-                sendHandler.play(nextItem).collect {
-                    _events.value = it
+        val itemFlow = flow {
+            while (coroutineContext.isActive) {
+                val nextItem = removeNextItem(channel)
+                logger.info("Playing '${nextItem.title}' (${nextItem.youtubeId})")
+                try {
+                    emit(nextItem)
+                } catch (e: Throwable) {
+                    logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.youtubeId})" }
                 }
-            } catch (e: Exception) {
-                logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.youtubeId})" }
+            }
+        }
+        sendHandler.play(itemFlow).collect {
+            _events.value = it
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun removeNextItem(channel: VoiceChannel): PlayableItem {
+        return queueManager.remove {
+            val updates = channelFlow {
+                send(Unit)
+                val listener = object {
+                    @SubscribeEvent
+                    fun onVoiceUpdate(event: GenericGuildVoiceEvent) {
+                        if (event.guild.id == guildId) {
+                            sendBlocking(Unit)
+                        }
+                    }
+                }
+                jda.addEventListener(listener)
+                invokeOnClose {
+                    jda.removeEventListener(listener)
+                }
+                delay(Long.MAX_VALUE)
+            }
+            updates.collect {
+                send(channel.members.mapTo(mutableSetOf()) { it.id })
             }
         }
     }

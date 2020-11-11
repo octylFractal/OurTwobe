@@ -18,14 +18,9 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
-import org.bytedeco.ffmpeg.global.avutil.AV_OPT_SEARCH_CHILDREN
-import org.bytedeco.ffmpeg.global.avutil.av_opt_set_int
-
 class Resampler(
     inputFormat: Format,
     outputFormat: Format
 ) : FilterGraph(inputFormat, outputFormat, listOf(
-    Filter("aresample", "resampler") {
-        av_opt_set_int(it, "async", 1000, AV_OPT_SEARCH_CHILDREN)
-    }
+    Filter("aresample", "resampler") { }
 ))

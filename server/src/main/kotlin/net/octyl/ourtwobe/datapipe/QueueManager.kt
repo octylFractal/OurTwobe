@@ -21,7 +21,9 @@ package net.octyl.ourtwobe.datapipe
 import com.google.common.collect.Multimaps
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.job
@@ -30,7 +32,6 @@ import net.octyl.ourtwobe.util.RWLock
 import net.octyl.ourtwobe.util.read
 import net.octyl.ourtwobe.util.write
 import java.util.TreeSet
-import kotlin.coroutines.coroutineContext
 
 class QueueManager {
 
@@ -61,28 +62,35 @@ class QueueManager {
         }
     }
 
-    suspend fun remove(currentOwners: ReceiveChannel<Set<String>>): PlayableItem {
-        var owners = currentOwners.receive()
-        while (true) {
-            val deferred: CompletableDeferred<Unit> = rwLock.write {
-                removeAvailableItem(owners)?.let {
-                    currentOwners.cancel()
-                    return it
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun remove(currentOwners: suspend ProducerScope<Set<String>>.() -> Unit): PlayableItem {
+        return coroutineScope {
+            val ownerChannel = produce(block = currentOwners)
+            var owners = ownerChannel.receive()
+            var value: PlayableItem? = null
+            while (true) {
+                val deferred: CompletableDeferred<Unit> = rwLock.write {
+                    removeAvailableItem(owners)?.let {
+                        ownerChannel.cancel()
+                        value = it
+                        return@write null
+                    }
+                    // put a pending marker into the list
+                    CompletableDeferred<Unit>(coroutineContext.job).also {
+                        awaitingNewItem.add(it)
+                    }
+                } ?: break
+                // wait to be signalled
+                select<Unit> {
+                    ownerChannel.onReceive {
+                        deferred.cancel()
+                        owners = it
+                    }
+                    deferred.onAwait { Unit }
                 }
-                // put a pending marker into the list
-                CompletableDeferred<Unit>(coroutineContext.job).also {
-                    awaitingNewItem.add(it)
-                }
+                // then loop!
             }
-            // wait to be signalled
-            select<Unit> {
-                currentOwners.onReceive {
-                    deferred.cancel()
-                    owners = it
-                }
-                deferred.onAwait { Unit }
-            }
-            // then loop!
+            value ?: error("Somehow, no value was set.")
         }
     }
 
