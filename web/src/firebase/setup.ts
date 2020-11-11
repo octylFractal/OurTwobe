@@ -33,6 +33,12 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = firebase.initializeApp(firebaseConfig);
+if (process.env.NODE_ENV !== 'production') {
+    firebaseApp.firestore().settings({
+        host: "localhost:10052",
+        ssl: false,
+    });
+}
 firebaseApp.firestore().enablePersistence()
     .catch(function (err) {
         if (err.code == 'failed-precondition') {

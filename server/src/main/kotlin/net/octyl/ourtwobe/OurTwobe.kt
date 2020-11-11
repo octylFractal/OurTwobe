@@ -18,122 +18,80 @@
 
 package net.octyl.ourtwobe
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.google.cloud.firestore.Firestore
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.cloud.FirestoreClient
-import discord4j.core.DiscordClientBuilder
-import discord4j.core.event.domain.guild.GuildCreateEvent
-import discord4j.core.event.domain.lifecycle.DisconnectEvent
-import discord4j.core.event.domain.lifecycle.ReadyEvent
-import discord4j.core.event.domain.message.MessageCreateEvent
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.withContext
+import com.google.common.util.concurrent.ThreadFactoryBuilder
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 import mu.KotlinLogging
-import net.octyl.ourtwobe.pipe.GuildDataPipe
-import net.octyl.ourtwobe.pipe.GuildUsersPipe
-import net.octyl.ourtwobe.pipe.ProfilePipe
-import net.octyl.ourtwobe.pipe.VoiceChannelDataPipe
-import net.octyl.ourtwobe.pipe.VoiceStatePipe
-import reactor.core.scheduler.Schedulers
-import java.nio.file.Files
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.events.StatusChangeEvent
+import net.dv8tion.jda.api.hooks.SubscribeEvent
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.ChunkingFilter
+import net.dv8tion.jda.api.utils.MemberCachePolicy
+import net.dv8tion.jda.api.utils.cache.CacheFlag
+import net.octyl.ourtwobe.api.module
+import net.octyl.ourtwobe.datapipe.GuildManager
+import net.octyl.ourtwobe.discord.DiscordIdAuthorization
+import net.octyl.ourtwobe.util.OptimizedAnnotatedEventManager
+import net.octyl.ourtwobe.youtube.api.YouTubeApi
+import net.octyl.ourtwobe.youtube.YouTubeItemResolver
 import java.nio.file.Path
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 private val LOGGER = KotlinLogging.logger {}
 
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-suspend fun main() {
-    LOGGER.info("Spinning up Ourtwobe...")
-    val discordToken = withContext(Dispatchers.IO) {
-        Files.readString(Path.of("./secrets/discord-token.txt")).trim()
-    }
-    val bot = DiscordClientBuilder.create(discordToken)
-        // we use coroutines for all of our work, which switch threads anyways
-        .setEventScheduler(Schedulers.immediate())
-        .build()
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineName("OurTwobeMain"))
+val EVENT_POOL: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("jda-event-thread-%d")
+    .build())
 
-    val firebase = initFirebase()
-    val firestore: Firestore = FirestoreClient.getFirestore(firebase)
+fun main() {
+    LOGGER.info("Spinning up OurTwobe...")
+    val config = loadConfig(Path.of("./secrets/config.properties"))
 
-    coroutineScope {
-        val pipes = listOf(
-            GuildDataPipe(firestore),
-            GuildUsersPipe(firestore),
-            ProfilePipe(firestore),
-            VoiceChannelDataPipe(firestore),
-            VoiceStatePipe(firestore),
+    val jda = JDABuilder.createLight(config.discord.token)
+        .enableIntents(
+            GatewayIntent.GUILD_MEMBERS,
+            GatewayIntent.GUILD_VOICE_STATES,
         )
+        .enableCache(
+            CacheFlag.VOICE_STATE,
+        )
+        .setChunkingFilter(ChunkingFilter.ALL)
+        .setMemberCachePolicy(MemberCachePolicy.ALL)
+        .setEventManager(OptimizedAnnotatedEventManager())
+        .setEventPool(EVENT_POOL)
+        .setActivity(Activity.playing("your music!"))
+        .build()
 
-        for (pipe in pipes) {
-            // async-launch all of the pipes
-            launch {
-                // but remember to start them in the outer scope so they don't hold up initialization
-                pipe.start(scope, bot)
+    val embeddedServer: NettyApplicationEngine = embeddedServer(Netty, port = 13445, host = "localhost") {
+        module(
+            DiscordIdAuthorization(config.owner),
+            InternalPeeker(jda),
+            GuildManager(jda),
+            YouTubeItemResolver(YouTubeApi(config.youTube.token))
+        )
+    }
+    embeddedServer.start()
+
+    jda.awaitReady()
+    LOGGER.info("OurTwobe is online and ready to go!")
+    val shutdown = CountDownLatch(1)
+    jda.addEventListener(object {
+        @SubscribeEvent
+        fun onStatusChange(event: StatusChangeEvent) {
+            if (event.newStatus == JDA.Status.SHUTDOWN) {
+                shutdown.countDown()
+                jda.removeEventListener(this)
             }
         }
-    }
-
-    scope.launch {
-        bot.eventDispatcher.on<MessageCreateEvent>()
-            .filter { event ->
-                event.guildId.isEmpty &&
-                    event.message.author.orElse(null)?.id != bot.selfId.orElseThrow()
-            }
-            .collect {
-                it.message.channel
-                    .flatMap { channel -> channel.createMessage("~no u~") }
-                    .awaitFirst()
-            }
-    }
-    scope.launch {
-        bot.eventDispatcher.on<ReadyEvent>()
-            .onEach {
-                LOGGER.info { "Connected to Discord!" }
-            }
-            .flatMapConcat {
-                bot.eventDispatcher.on<GuildCreateEvent>()
-                    .take(it.guilds.size)
-            }
-            .collect {
-                LOGGER.info { "Connected to guild: '${it.guild.name}' (${it.guild.id})" }
-            }
-    }
-    scope.launch {
-        bot.eventDispatcher.on<DisconnectEvent>()
-            .collect {
-                LOGGER.warn { "Disconnected from Discord :(" }
-            }
-    }
-    bot.login()
-        .asFlow()
-        .catch {
-            LOGGER.error(it) { "Error logging in to discord" }
-        }
-        .launchIn(scope)
-
-    serveApi(FirebaseAuth.getInstance(firebase))
+    })
+    shutdown.await()
+    LOGGER.warn("JDA shutdown received, entire server is going down!")
+    embeddedServer.stop(1000L, 5000L)
 }
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DiscordUser(
-    val id: String,
-    val username: String,
-    val avatar: String,
-)

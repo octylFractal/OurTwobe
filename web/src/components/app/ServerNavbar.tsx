@@ -57,7 +57,7 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
 };
 
 const SpecificServerNavbar: React.FC = () => {
-    const {guildId} = useParams();
+    const {guildId} = useParams<{guildId: string}>();
     if (typeof guildId === "undefined") {
         return <></>;
     }

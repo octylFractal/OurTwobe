@@ -139,8 +139,6 @@ module.exports = (env, argv) => {
                 },
             },
             optimization: {
-                namedChunks: true,
-                moduleIds: 'hashed',
                 runtimeChunk: "single",
                 minimizer: [
                     new TerserJSPlugin(),
@@ -151,52 +149,6 @@ module.exports = (env, argv) => {
                     maxAsyncRequests: 50,
                     maxInitialRequests: 50,
                     maxSize: 100_000,
-                    cacheGroups: {
-                        application: {
-                            test: /[\\/]src[\\/]/,
-                            name(module) {
-                                if (module.type === "css/mini-extract") {
-                                    module = module.issuer;
-                                }
-                                const request = module.userRequest || module.request;
-                                if (request === undefined) {
-                                    console.log("Failed for ", module);
-                                    return "application";
-                                }
-                                return path.relative(__dirname, request)
-                                    .replace("/", "~");
-                            }
-                        },
-                        vendor: {
-                            test: /[\\/]node_modules[\\/]/,
-                            name(module) {
-                                const file = module.context;
-                                let currentDir = file;
-                                // eslint-disable-next-line no-constant-condition
-                                while (true) {
-                                    while (!fs.existsSync(path.resolve(currentDir, 'package.json'))) {
-                                        if (currentDir.indexOf('node_modules') < 0) {
-                                            // we went too far
-                                            throw new Error(`Failed to find package.json for ${file}`);
-                                        }
-                                        currentDir = path.dirname(currentDir);
-                                    }
-                                    const pkgJson = require(path.resolve(currentDir, 'package.json'));
-                                    let packageName = pkgJson['name'];
-                                    if (!packageName) {
-                                        const requested = pkgJson['_requested'];
-                                        packageName = requested && requested['name'];
-                                    }
-                                    if (!packageName) {
-                                        currentDir = path.dirname(currentDir);
-                                        continue;
-                                    }
-
-                                    return `npm.${packageName.replace("/", "~")}`;
-                                }
-                            },
-                        },
-                    },
                 },
             },
         });
@@ -234,9 +186,6 @@ module.exports = (env, argv) => {
             alias: {
                 'react-dom': '@hot-loader/react-dom',
             },
-        },
-        optimization: {
-            namedChunks: true,
         },
     });
 };

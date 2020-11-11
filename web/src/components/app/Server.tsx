@@ -35,7 +35,7 @@ const Server: React.FC<ServerProps> = ({guildId}) => {
 };
 
 const SpecificServer: React.FC = () => {
-    const {guildId} = useParams();
+    const {guildId} = useParams<{guildId: string}>();
     if (typeof guildId === "undefined") {
         return <></>;
     }
