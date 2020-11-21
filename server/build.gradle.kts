@@ -26,7 +26,7 @@ dependencies {
     implementation(platform(kotlin("bom")))
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.4.0"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.4.1"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")

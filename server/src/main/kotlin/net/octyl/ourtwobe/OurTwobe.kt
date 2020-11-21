@@ -35,6 +35,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag
 import net.octyl.ourtwobe.api.module
 import net.octyl.ourtwobe.datapipe.GuildManager
 import net.octyl.ourtwobe.discord.DiscordIdAuthorization
+import net.octyl.ourtwobe.discord.audio.NanoSendSystem
 import net.octyl.ourtwobe.util.OptimizedAnnotatedEventManager
 import net.octyl.ourtwobe.youtube.api.YouTubeApi
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
@@ -67,6 +68,7 @@ fun main() {
         .setEventManager(OptimizedAnnotatedEventManager())
         .setEventPool(EVENT_POOL)
         .setActivity(Activity.playing("your music!"))
+        .setAudioSendFactory(::NanoSendSystem)
         .build()
 
     val embeddedServer: NettyApplicationEngine = embeddedServer(Netty, port = 13445, host = "localhost") {
