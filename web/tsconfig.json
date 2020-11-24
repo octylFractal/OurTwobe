@@ -30,5 +30,6 @@
             "dom",
             "scripthost"
         ]
-    }
+    },
+    "exclude": ["./build"]
 }

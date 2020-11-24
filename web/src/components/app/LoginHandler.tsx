@@ -19,7 +19,7 @@
 import React, {useEffect, useState} from "react";
 import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
-import {finishDiscordLogIn} from "../../firebase/auth";
+import {finishDiscordLogIn} from "../../discord/auth";
 import {hot} from "react-hot-loader/root";
 import {Redirect} from "react-router-dom";
 import {connect} from "react-redux";
@@ -39,11 +39,7 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
             setFailed(true);
             return;
         }
-        finishDiscordLogIn(hashData.access_token)
-            .catch(err => {
-                console.warn("Failed to log in to Firebase using Discord token", err);
-                setFailed(true);
-            });
+        finishDiscordLogIn(hashData.access_token);
     }, []);
 
     if (loggedIn) {
@@ -60,7 +56,7 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
 };
 
 export default hot(connect((state: LocalState) => ({
-    loggedIn: state.userInfo.heardFromFirebase && typeof state.userInfo.uid !== "undefined"
+    loggedIn: state.userInfo.heardFromDiscord && state.userInfo.profile !== null
 }))(LoginHandler));
 
 interface DiscordLoginData {

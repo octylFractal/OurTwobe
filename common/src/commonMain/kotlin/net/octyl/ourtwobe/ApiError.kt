@@ -1,5 +1,7 @@
 package net.octyl.ourtwobe
 
+import net.octyl.ourtwobe.interop.Export
+
 @Export
 data class ApiError(
     /**

@@ -16,36 +16,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {net} from "common";
 import React, {useEffect, useState} from "react";
 import {Input} from "reactstrap";
 import {useRandomId} from "./reactHelpers";
 import {ChannelId, GuildId} from "../data/DiscordIds";
-import {firebaseApp} from "../firebase/setup";
-import {attachFirebase} from "../firebase/pipes";
-import VoiceChannelData = net.octyl.ourtwobe.VoiceChannelData;
 
 export interface ChannelSelectProps {
     guildId: GuildId;
 }
 
 export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId}) => {
-    const channelSelectId = useRandomId("channelSelect");
-    const [channels, setChannels] = useState<Record<ChannelId, VoiceChannelData>>({});
+    const [selectedChannel, setSelectedChannel] = useState("!!");
 
     useEffect(() => {
-        const channelsCollection = firebaseApp.firestore()
-            .collection("guilds").doc(guildId).collection("channels");
 
-        return attachFirebase(
-            `guild ${guildId} channels`,
-            channelsCollection,
-            data => data.id,
-            setChannels,
-        );
-    }, [guildId]);
+    }, [selectedChannel]);
 
-    return <Input type="select" name="channel" id={channelSelectId} bsSize="sm">
+    return <Input type="select" name="channel" bsSize="sm"
+                  value={selectedChannel}
+                  onChange={e => void setSelectedChannel(e.currentTarget.value)}>
         <option value="!!">None</option>
         {Object.values(channels)
             .sort((a, b) => a.order - b.order)

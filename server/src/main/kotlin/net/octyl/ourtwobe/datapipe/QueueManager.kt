@@ -36,7 +36,9 @@ import java.util.TreeSet
 class QueueManager {
 
     private val rwLock = RWLock()
-    private val queues = Multimaps.newSortedSetMultimap<String, PlayableItem>(HashMap(), ::TreeSet)
+    private val queues = Multimaps.newSortedSetMultimap<String, PlayableItem>(HashMap()) {
+        TreeSet(Comparator.comparing { it.submissionTime })
+    }
     private val _events = MutableSharedFlow<DataPipeEvent.QueueItem>(extraBufferCapacity = 16)
     val events: SharedFlow<DataPipeEvent.QueueItem> = _events
 

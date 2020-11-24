@@ -17,5 +17,6 @@
  */
 
 export const LS_CONSTANTS = {
-    DISCORD_AUTH_STATE: 'discord.auth.state'
+    DISCORD_TOKEN: 'discord.token',
+    DISCORD_AUTH_STATE: 'discord.auth.state',
 };

@@ -55,6 +55,10 @@ class ServerSentEventStream(
     suspend fun sendEvent(event: Event) {
         withContext(Dispatchers.IO) {
             exhaustive(when (event) {
+                is Event.Close -> {
+                    response.close()
+                    return@withContext
+                }
                 is Event.Comment -> {
                     writeField("", event.commentText)
                 }
@@ -75,6 +79,8 @@ class ServerSentEventStream(
 }
 
 sealed class Event {
+    object Close : Event()
+
     class Comment(
         val commentText: String
     ) : Event()

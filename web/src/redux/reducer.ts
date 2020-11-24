@@ -17,30 +17,77 @@
  */
 
 import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {LS_CONSTANTS} from "../app/localStorage";
+import {UserId} from "../data/DiscordIds";
+import {DiscordApi} from "../discord/api";
+
+export interface UserProfile {
+    id: UserId
+    username: string
+    avatarUrl: string
+}
 
 export interface UserInfoRecord {
-    readonly heardFromFirebase: boolean;
-    readonly uid?: string;
+    readonly heardFromDiscord: boolean
+    readonly profile: UserProfile | null
 }
 
 const {actions: userInfo, reducer: userInfoSlice} = createSlice({
     name: "userInfo",
     initialState: {
-        heardFromFirebase: false
+        heardFromDiscord: false,
+        profile: null,
     } as UserInfoRecord,
     reducers: {
-        login(state, {payload}: PayloadAction<string>): void {
-            state.heardFromFirebase = true;
-            state.uid = payload;
+        loadProfile(_, {payload}: PayloadAction<UserProfile>): UserInfoRecord {
+            return {
+                heardFromDiscord: true,
+                profile: payload,
+            };
         },
-        logout(): UserInfoRecord {
-            return {heardFromFirebase: true};
+        clearProfile(): UserInfoRecord {
+            return {
+                heardFromDiscord: true,
+                profile: null,
+            };
         },
     }
 });
 
-export {userInfo};
+export interface UserTokenData {
+    token: string
+    discordApi: DiscordApi
+}
+
+function computeUserTokenData(token: string): UserTokenData
+function computeUserTokenData(token: null): null
+function computeUserTokenData(token: string | null): UserTokenData | null
+function computeUserTokenData(token: string | null): UserTokenData | null {
+    if (token) {
+        return {
+            token,
+            discordApi: new DiscordApi(token),
+        };
+    }
+    return null;
+}
+
+const {actions: userToken, reducer: userTokenSlice} = createSlice({
+    name: "userToken",
+    initialState: computeUserTokenData(localStorage.getItem(LS_CONSTANTS.DISCORD_TOKEN)),
+    reducers: {
+        login(_, {payload}: PayloadAction<string>): UserTokenData {
+            return computeUserTokenData(payload);
+        },
+        logout(): null {
+            return computeUserTokenData(null);
+        },
+    }
+});
+
+export {userInfo, userToken};
 
 export const reducer = combineReducers({
     userInfo: userInfoSlice,
+    userToken: userTokenSlice,
 });

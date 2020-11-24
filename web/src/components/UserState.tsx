@@ -18,20 +18,14 @@
 
 import {faSignInAlt, faSpinner} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import React, {ReactElement, useEffect, useState} from "react";
+import React, {ReactElement} from "react";
 import {DropdownItem, DropdownMenu, DropdownToggle, NavLink, UncontrolledButtonDropdown} from "reactstrap";
-import {generateOAuthLink} from "../firebase/auth";
-import {firebaseApp} from "../firebase/setup";
-import {UserInfoRecord} from "../redux/reducer";
+import {generateOAuthLink} from "../discord/auth";
+import {UserInfoRecord, UserProfile} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
 import {Redirect} from "react-router-dom";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
-import {net} from "common";
-import {UserId} from "../data/DiscordIds";
-import {docData} from "rxfire/firestore";
-import {tap} from "rxjs/operators";
-import {logErrorAndRetry} from "../rx/observer";
-import UserProfile = net.octyl.ourtwobe.UserProfile;
+import {LS_CONSTANTS} from "../app/localStorage";
 
 function loading(): ReactElement {
     return <div className="navbar-text d-inline-flex align-items-center">
@@ -39,33 +33,10 @@ function loading(): ReactElement {
     </div>;
 }
 
-interface UserProfileProps {
-    uid: UserId;
-}
-
-const DEFAULT_PROFILE: UserProfile = {
-    id: "",
-    username: "Loading...",
-    avatarUrl: "https://discordapp.com/assets/6debd47ed13483642cf09e832ed0bc1b.png",
-};
-
-const UserProfileDisplay: React.FC<UserProfileProps> = ({uid}) => {
-    const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-
-    useEffect(() => {
-        const sub = docData<UserProfile>(firebaseApp.firestore().collection("profiles").doc(uid))
-            .pipe(
-                tap(setProfile),
-                logErrorAndRetry(`${uid} profile updates`)
-            )
-            .subscribe();
-
-        return (): void => sub.unsubscribe();
-    }, [uid]);
-
+const UserProfileDisplay: React.FC<UserProfile> = (props) => {
     return <>
-        <NavbarImg src={profile.avatarUrl} alt="Avatar" className="rounded-circle"/>
-        {profile.username}
+        <NavbarImg src={props.avatarUrl} alt="Avatar" className="rounded-circle"/>
+        {props.username}
     </>;
 };
 
@@ -73,11 +44,11 @@ export interface UserStateProps {
     userInfo: UserInfoRecord;
 }
 
-export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromFirebase, uid}}) => {
-    if (!heardFromFirebase) {
+export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord, profile}}) => {
+    if (!heardFromDiscord) {
         return loading();
     }
-    if (typeof uid === "undefined") {
+    if (profile === null) {
         // lazily generate OAuth link to prevent overwriting state
         return <NavLink href="#" onClick={() => void window.location.assign(generateOAuthLink())}
                         className="d-block">
@@ -89,13 +60,12 @@ export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromFirebas
     }
 
     function logOut(): void {
-        firebaseApp.auth().signOut()
-            .catch(err => console.error(err));
+        localStorage.removeItem(LS_CONSTANTS.DISCORD_TOKEN);
     }
 
     return <UncontrolledButtonDropdown>
         <DropdownToggle nav caret>
-            <UserProfileDisplay uid={uid}/>
+            <UserProfileDisplay {...profile}/>
         </DropdownToggle>
         <DropdownMenu right>
             <DropdownItem onClick={logOut}>

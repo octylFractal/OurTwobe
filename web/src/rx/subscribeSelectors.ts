@@ -16,27 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export function oKeys<T>(o: T): (keyof T)[] {
-    return Object.keys(o) as (keyof T)[];
-}
+import {subscribe as userProfileSubscribe} from "./selector/user-profile";
 
-export function requireNonNull<T>(val: T): asserts val is NonNullable<T> {
-    if (val === undefined || val === null) {
-        throw new Error(
-            `Expected 'val' to be defined, but received ${val}`
-        );
-    }
-}
-
-export function asNonNull<T>(val: T): NonNullable<T> {
-    requireNonNull(val);
-    return val;
-}
-
-export function exhaustiveCheck(param: never): void {
-    return param;
-}
-
-export function runBlock<R>(block: () => R): R {
-    return block();
+/**
+ * Subscribe all necessary selectors to the store.
+ */
+export function subscribeSelectors(): void {
+    userProfileSubscribe();
 }

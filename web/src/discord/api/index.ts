@@ -16,17 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package net.octyl.ourtwobe.util
+import {User} from "./response/User";
+import axios, {AxiosInstance} from "axios";
 
-import java.math.BigInteger
-import java.security.SecureRandom
+export class DiscordApi {
+    private readonly client: AxiosInstance;
 
-class TokenGenerator {
-    private val rng = SecureRandom()
+    constructor(token: string) {
+        this.client = axios.create({
+            baseURL: "https://discord.com/api/v8/",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+    }
 
-    fun newToken(): String {
-        val array = ByteArray(32)
-        rng.nextBytes(array)
-        return BigInteger(array).abs().toString(36)
+    async getMe(): Promise<User> {
+        return this.client.get("/me");
     }
 }

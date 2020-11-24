@@ -20,6 +20,7 @@ package net.octyl.ourtwobe.api
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.google.common.collect.Tables
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -27,9 +28,8 @@ import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.auth.Principal
 import io.ktor.auth.authenticate
-import io.ktor.auth.authentication
 import io.ktor.auth.basic
-import io.ktor.auth.principal
+import io.ktor.features.AutoHeadResponse
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
@@ -46,6 +46,11 @@ import io.ktor.routing.post
 import io.ktor.routing.put
 import io.ktor.routing.route
 import io.ktor.routing.routing
+import io.ktor.sessions.Sessions
+import io.ktor.sessions.cookie
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
+import io.ktor.sessions.set
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -56,15 +61,13 @@ import net.octyl.ourtwobe.InternalPeeker
 import net.octyl.ourtwobe.MODULES
 import net.octyl.ourtwobe.QueueSubmit
 import net.octyl.ourtwobe.datapipe.DataPipe
-import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.GuildManager
 import net.octyl.ourtwobe.datapipe.GuildSettings
 import net.octyl.ourtwobe.datapipe.GuildState
 import net.octyl.ourtwobe.discord.DiscordApi
-import net.octyl.ourtwobe.discord.DiscordUser
-import net.octyl.ourtwobe.util.TokenGenerator
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
 import org.slf4j.event.Level
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger { }
@@ -75,9 +78,11 @@ fun Application.module(
     guildManager: GuildManager,
     youTubeItemResolver: YouTubeItemResolver
 ) {
-    val tokenGen = TokenGenerator()
-    val dataPipes = ConcurrentHashMap<String, DataPipe>()
+    // user -> guild -> pipe table
+    val dataPipes = Tables.newCustomTable<String, String, DataPipe>(ConcurrentHashMap(), ::ConcurrentHashMap)
     val api = DiscordApi()
+
+    install(AutoHeadResponse)
 
     install(ContentNegotiation) {
         jackson {
@@ -87,24 +92,25 @@ fun Application.module(
         serverSentEvents()
     }
 
+    install(Sessions) {
+        cookie<Session>("session", storage = SimpleSessionStorage()) {
+            cookie.path = "/"
+            cookie.maxAgeInSeconds = Duration.ofDays(1L).toSeconds()
+        }
+    }
+
     install(Authentication) {
         basic("discord") {
+            skipWhen { it.sessions.get<Session>() != null }
             realm = "Discord-based access"
             validate { credentials ->
                 if (credentials.name != "discord") {
                     return@validate null
                 }
-                api.getMe(credentials.password)?.let { DiscordUserPrincipal(it) }
-            }
-        }
-        basic("communication") {
-            realm = "Communication-based access"
-            validate { credentials ->
-                val pipe = dataPipes[credentials.password]
-                if (credentials.name == "communication" && pipe != null) {
-                    DataPipePrincipal(pipe)
-                } else {
-                    null
+                api.getMe(credentials.password)?.let {
+                    sessions.set(Session(userId = it.id))
+
+                    Authenticated
                 }
             }
         }
@@ -140,44 +146,33 @@ fun Application.module(
         }
     }
 
-    fun extractUserId(call: ApplicationCall) = when (val principal = call.authentication.principal) {
-        is DiscordUserPrincipal -> principal.user.id
-        is DataPipePrincipal -> principal.pipe.user.id
-        // authentication should be wrapping everything
-        else -> error("This shouldn't be possible!")
-    }
+    fun extractUserId(call: ApplicationCall) = call.requireSession().userId
 
-    fun ApplicationCall.getGuildState(): GuildState {
+    fun ApplicationCall.getGuildState(): Pair<String, GuildState> {
         val userId = extractUserId(this)
         val guildId = parameters["guildId"]!!
-        return guildManager.getState(guildId)?.takeIf { guildManager.canSee(guildId, userId) }
+        return guildId to (guildManager.getState(guildId)?.takeIf { guildManager.canSee(guildId, userId) }
             ?: throw ApiErrorException(
                 ApiError("guild.not.found", "Guild $guildId not found"), HttpStatusCode.NotFound
-            )
+            ))
     }
 
     routing {
         authenticate("discord") {
             get("/guilds/{guildId}/data-pipe") {
-                val (user) = call.requirePrincipal<DiscordUserPrincipal>()
-                val state = call.getGuildState()
+                val (userId) = call.requireSession()
+                val (guildId, state) = call.getGuildState()
 
                 call.response.header(HttpHeaders.CacheControl, "no-cache")
 
-                val token = tokenGen.newToken()
-                val pipe = DataPipe(user)
-                dataPipes[token] = pipe
+                val pipe = dataPipes.row(userId).computeIfAbsent(guildId) { DataPipe() }
                 pipe.invokeOnClose {
-                    dataPipes.remove(token)
+                    dataPipes.remove(userId, guildId)
                 }
 
                 coroutineScope {
-                    // this needs to be async so that if the event buffer fills up, the call can proceed to empty it
                     launch {
-                        // send out initial events
-                        pipe.sendData(DataPipeEvent.CommunicationToken(token))
-
-                        // and let the state manager take over pumping events into it
+                        // let the state manager take over pumping events into it
                         // this method will block until connection close
                         state.pumpEventsToPipe(pipe)
                     }
@@ -196,13 +191,11 @@ fun Application.module(
                     call.respond(internalPeeker.getGuilds())
                 }
             }
-        }
 
-        authenticate("communication") {
             route("/guilds/{guildId}") {
                 put {
                     val body = call.receive<GuildUpdate>()
-                    val state = call.getGuildState()
+                    val (_, state) = call.getGuildState()
                     state.guildSettingsHolder.updateSettings { settings ->
                         var (volume, activeChannel) = settings
                         body.volume?.let {
@@ -216,13 +209,13 @@ fun Application.module(
                     call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
                 }
                 post("/queue") {
-                    val (pipe) = call.requirePrincipal<DataPipePrincipal>()
+                    val userId = extractUserId(call)
                     val body = call.receive<QueueSubmit>()
-                    val state = call.getGuildState()
+                    val (_, state) = call.getGuildState()
 
                     youTubeItemResolver.resolveItems(body.url).collect {
-                        logger.info { "${pipe.user.id} queued ${it.title}" }
-                        state.queueManager.insert(pipe.user.id, it)
+                        logger.info { "$userId queued ${it.title}" }
+                        state.queueManager.insert(userId, it)
                     }
                     call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
                 }
@@ -231,13 +224,6 @@ fun Application.module(
     }
 }
 
-data class DataPipePrincipal(
-    val pipe: DataPipe,
-) : Principal
+object Authenticated : Principal
 
-data class DiscordUserPrincipal(
-    val user: DiscordUser,
-) : Principal
-
-inline fun <reified P : Principal> ApplicationCall.requirePrincipal(): P =
-    principal<P>() ?: error("Principal of type ${P::class.qualifiedName} not present")
+private fun ApplicationCall.requireSession(): Session = sessions.get() ?: error("No session available!")

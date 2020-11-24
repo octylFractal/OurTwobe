@@ -54,5 +54,4 @@ class DiscordApi {
 
 data class DiscordUser(
     val id: String,
-    val avatar: String?,
 )

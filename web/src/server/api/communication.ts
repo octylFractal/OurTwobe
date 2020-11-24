@@ -16,10 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {User} from "firebase/app";
-import {userInfo} from "../redux/reducer";
-import {store} from "../redux/store";
+import axios, {AxiosInstance} from "axios";
+import {net} from "common";
+import GuildUpdate = net.octyl.ourtwobe.GuildUpdate;
 
-export function pushUidToStore(user: User | null): void {
-    store.dispatch(user === null ? userInfo.logout() : userInfo.login(user.uid));
+/**
+ * Communication-only API interface. The data-pipe is a separate class.
+ */
+export class OurTwobeCommApi {
+    private readonly client: AxiosInstance;
+
+    constructor(token: string, guildId: string) {
+        this.client = axios.create({
+            baseURL: `${window.location.origin}/guilds/${guildId}/`,
+            auth: {
+                username: "communication",
+                password: token,
+            },
+        });
+    }
+
+    async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
+        return this.client.post("/guilds/", guildUpdate);
+    }
 }

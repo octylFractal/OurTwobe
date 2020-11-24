@@ -19,44 +19,49 @@
 package net.octyl.ourtwobe.datapipe
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
-import net.octyl.ourtwobe.discord.DiscordUser
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.runBlocking
 import net.octyl.ourtwobe.util.Event
-import net.octyl.ourtwobe.util.ServerSentEventStream
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.reflect.full.createType
 
 /**
  * Each instance is serving one SSE connection.
  */
-class DataPipe(
-    val user: DiscordUser,
-) : AutoCloseable {
-    private val messageChannel = Channel<Event>(Channel.BUFFERED)
+class DataPipe : AutoCloseable {
+    private val messageChannel = MutableSharedFlow<Event>(extraBufferCapacity = 64)
     private val closed = AtomicBoolean()
+    private var invokeOnClose = CopyOnWriteArrayList<() -> Unit>()
 
     /**
      * One-time flow that will produce all messages.
      */
-    fun consumeMessages(): Flow<Event> = messageChannel.consumeAsFlow()
+    fun consumeMessages(): Flow<Event> = messageChannel
 
     suspend fun sendData(data: DataPipeEvent) {
-        messageChannel.send(Event.Data(
-            eventType = data.eventType,
-            data = data.toSerializedForm()
+        messageChannel.emit(Event.Data(
+            eventType = DataPipeEvent.reverseTypeMapping[data.javaClass.kotlin.createType()]
+                ?: error("Unknown event type: ${data.javaClass}"),
+            data = data,
         ))
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            messageChannel.close()
+            runBlocking {
+                messageChannel.emit(Event.Close)
+            }
+            invokeOnClose.forEach {
+                it()
+            }
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun invokeOnClose(block: () -> Unit) {
-        messageChannel.invokeOnClose { block() }
+        invokeOnClose.add(block)
     }
 
 }
