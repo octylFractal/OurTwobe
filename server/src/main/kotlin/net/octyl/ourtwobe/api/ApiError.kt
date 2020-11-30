@@ -16,10 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
-import ReactDOM from "react-dom";
-import {App} from "./components/app/App";
+package net.octyl.ourtwobe.api
 
-export function renderApp(container: Element): void {
-    ReactDOM.render(<React.StrictMode><App/></React.StrictMode>, container);
-}
+data class ApiError(
+    /**
+     * The error code.
+     */
+    val error: String,
+    /**
+     * The human-readable message.
+     */
+    val message: String
+)

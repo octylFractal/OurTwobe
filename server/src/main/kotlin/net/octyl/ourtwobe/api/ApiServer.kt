@@ -29,6 +29,7 @@ import io.ktor.auth.Authentication
 import io.ktor.auth.Principal
 import io.ktor.auth.authenticate
 import io.ktor.auth.basic
+import io.ktor.client.utils.EmptyContent
 import io.ktor.features.AutoHeadResponse
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
@@ -55,11 +56,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.octyl.ourtwobe.ApiError
-import net.octyl.ourtwobe.GuildUpdate
 import net.octyl.ourtwobe.InternalPeeker
 import net.octyl.ourtwobe.MODULES
-import net.octyl.ourtwobe.QueueSubmit
 import net.octyl.ourtwobe.datapipe.DataPipe
 import net.octyl.ourtwobe.datapipe.GuildManager
 import net.octyl.ourtwobe.datapipe.GuildSettings
@@ -159,6 +157,16 @@ fun Application.module(
 
     routing {
         authenticate("discord") {
+            route("/authenticate") {
+                // Currently these two calls are the exact same
+                // In the future we might require cookie-only for /check
+                get {
+                    call.respond(HttpStatusCode.NoContent, EmptyContent)
+                }
+                get("/check") {
+                    call.respond(HttpStatusCode.NoContent, EmptyContent)
+                }
+            }
             get("/guilds/{guildId}/data-pipe") {
                 val (userId) = call.requireSession()
                 val (guildId, state) = call.getGuildState()

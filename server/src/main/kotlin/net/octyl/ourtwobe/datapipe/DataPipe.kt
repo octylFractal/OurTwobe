@@ -25,7 +25,6 @@ import kotlinx.coroutines.runBlocking
 import net.octyl.ourtwobe.util.Event
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.reflect.full.createType
 
 /**
  * Each instance is serving one SSE connection.
@@ -42,8 +41,7 @@ class DataPipe : AutoCloseable {
 
     suspend fun sendData(data: DataPipeEvent) {
         messageChannel.emit(Event.Data(
-            eventType = DataPipeEvent.reverseTypeMapping[data.javaClass.kotlin.createType()]
-                ?: error("Unknown event type: ${data.javaClass}"),
+            eventType = data.eventType,
             data = data,
         ))
     }

@@ -20,6 +20,7 @@ import React, {useEffect, useState} from "react";
 import {Input} from "reactstrap";
 import {useRandomId} from "./reactHelpers";
 import {ChannelId, GuildId} from "../data/DiscordIds";
+import {usePromise} from "./hook/usePromise";
 
 export interface ChannelSelectProps {
     guildId: GuildId;
@@ -27,16 +28,15 @@ export interface ChannelSelectProps {
 
 export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId}) => {
     const [selectedChannel, setSelectedChannel] = useState("!!");
-
-    useEffect(() => {
-
-    }, [selectedChannel]);
+    const channels = usePromise(async () => {
+        return [];
+    });
 
     return <Input type="select" name="channel" bsSize="sm"
                   value={selectedChannel}
                   onChange={e => void setSelectedChannel(e.currentTarget.value)}>
         <option value="!!">None</option>
-        {Object.values(channels)
+        {(channels.loading ? [] : channels.value)
             .sort((a, b) => a.order - b.order)
             .map(channel =>
                 <option key={channel.id} value={channel.id}>{channel.name}</option>

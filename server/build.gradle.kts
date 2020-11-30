@@ -22,7 +22,6 @@ inciseBlue {
 }
 
 dependencies {
-    implementation(project(":common"))
     implementation(platform(kotlin("bom")))
     implementation(kotlin("stdlib-jdk8"))
 

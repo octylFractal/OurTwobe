@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import loadable from "@loadable/component";
 import React from "react";
 import {hot} from "react-hot-loader/root";
 import {Provider} from "react-redux";
@@ -27,32 +26,34 @@ import ScrollToTop from "../compat/ScrollToTop";
 import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
 import {AppNavbar} from "./AppNavbar";
 
-const SplashLazy = loadable(() => import("./Splash"));
-const LoginHandlerLazy = loadable(() => import("./LoginHandler"));
-const ServerLazy = loadable(() => import("./Server"));
-const ServerNavbarLazy = loadable(() => import("./ServerNavbar"));
+const SplashLazy = React.lazy(() => import("./Splash"));
+const LoginHandlerLazy = React.lazy(() => import("./LoginHandler"));
+const ServerLazy = React.lazy(() => import("./Server"));
+const ServerNavbarLazy = React.lazy(() => import("./ServerNavbar"));
 
 const HotPortion = hot(() => {
     return <SimpleErrorBoundary context="the application root">
         <AppNavbar/>
-        <Switch>
-            <Route path="/guild/:guildId/">
-                <ServerNavbarLazy/>
-            </Route>
-        </Switch>
-        <Container fluid={true} className="p-3">
+        <React.Suspense fallback={<p>Loading...</p>}>
             <Switch>
-                <Route path="/discord/">
-                    <LoginHandlerLazy/>
-                </Route>
-                <Route path="/guild/:guildId">
-                    <ServerLazy/>
-                </Route>
-                <Route path="/">
-                    <SplashLazy/>
+                <Route path="/guild/:guildId/">
+                    <ServerNavbarLazy/>
                 </Route>
             </Switch>
-        </Container>
+            <Container fluid={true} className="p-3">
+                <Switch>
+                    <Route path="/discord/">
+                        <LoginHandlerLazy/>
+                    </Route>
+                    <Route path="/guild/:guildId">
+                        <ServerLazy/>
+                    </Route>
+                    <Route path="/">
+                        <SplashLazy/>
+                    </Route>
+                </Switch>
+            </Container>
+        </React.Suspense>
     </SimpleErrorBoundary>;
 });
 

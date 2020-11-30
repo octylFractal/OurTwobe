@@ -16,10 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
-import ReactDOM from "react-dom";
-import {App} from "./components/app/App";
+package net.octyl.ourtwobe.datapipe
 
-export function renderApp(container: Element): void {
-    ReactDOM.render(<React.StrictMode><App/></React.StrictMode>, container);
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.common.base.CaseFormat
+
+sealed class DataPipeEvent {
+    @JsonIgnore
+    val eventType = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, javaClass.kotlin.simpleName!!)!!
+
+    data class GuildSettings(
+        val volume: Int,
+        val activeChannel: String?,
+    ) : DataPipeEvent()
+
+    data class QueueItem(
+        val owner: String,
+        val item: PlayableItem,
+    ) : DataPipeEvent()
+
+    data class ProgressItem(
+        val item: PlayableItem,
+        val progress: Double,
+    ) : DataPipeEvent()
 }

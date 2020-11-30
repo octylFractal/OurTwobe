@@ -16,22 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
+import React, {useMemo} from "react";
 import {useParams} from "react-router-dom";
 import {hot} from "react-hot-loader/root";
-import {useGuildPipe} from "../../firebase/pipes/common";
+import {newDataPipe} from "../../server/api/data-pipe";
+import {DataPipeContext} from "../DataPipeContext";
 
 interface ServerProps {
     guildId: string;
 }
 
 const Server: React.FC<ServerProps> = ({guildId}) => {
-    const guild = useGuildPipe(guildId);
-    if (!guild) {
-        return <></>;
-    }
-    return <div>
-    </div>;
+    const pipe = useMemo(() => {
+        return newDataPipe(guildId);
+    }, [guildId]);
+    return <DataPipeContext.Provider value={pipe}>
+    </DataPipeContext.Provider>;
 };
 
 const SpecificServer: React.FC = () => {

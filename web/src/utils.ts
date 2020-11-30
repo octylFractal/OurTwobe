@@ -40,3 +40,5 @@ export function exhaustiveCheck(param: never): void {
 export function runBlock<R>(block: () => R): R {
     return block();
 }
+
+export type Writeable<T> = { -readonly [P in keyof T]: T[P] };

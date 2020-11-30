@@ -8,4 +8,3 @@ pluginManagement {
 
 include(":web")
 include(":server")
-include(":common")

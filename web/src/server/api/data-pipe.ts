@@ -16,14 +16,79 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {net} from "common";
 import {Observable} from "rxjs";
-import DataPipeEvent = net.octyl.ourtwobe.datapipe.DataPipeEvent;
-
+import {Writeable} from "../../utils";
 
 export interface DataPipeError {
     error: true
     value: unknown
+}
+
+export interface GuildSettings {
+    readonly type: 'guildSettings'
+    readonly volume: number
+    readonly activeChannel: string | null
+}
+
+export interface QueueItem {
+    readonly type: 'queueItem'
+    readonly owner: string
+    readonly item: PlayableItem
+}
+
+export interface ProgressItem {
+    readonly type: 'progressItem'
+    readonly item: PlayableItem
+    readonly progress: number
+}
+
+export type DataPipeEvent = GuildSettings | QueueItem | ProgressItem;
+
+export interface PlayableItem {
+    readonly youtubeId: string
+    readonly title: string
+    readonly thumbnail: Thumbnail
+    readonly duration: string
+    readonly id: string
+    readonly submissionTime: string
+}
+
+export interface Thumbnail {
+    readonly width: number
+    readonly height: number
+    readonly url: string
+}
+
+export class DataPipe {
+    constructor(
+        readonly observable:  Observable<DataPipeEvent | DataPipeError>,
+    ) {
+    }
+}
+
+function decodeMessage(m: MessageEvent): DataPipeEvent | DataPipeError {
+    let json: Writeable<DataPipeEvent | {type: "some string that will never actually be sent as a type"}>;
+    try {
+        json = JSON.parse(m.data);
+    } catch (e) {
+        return {
+            error: true,
+            value: e,
+        };
+    }
+    // hack the type on
+    (json as {type: string}).type = m.type;
+    switch (json.type) {
+        case 'guildSettings':
+        case 'queueItem':
+        case 'progressItem':
+            return json;
+        default:
+            return {
+                error: true,
+                value: new Error(`Unknown type: ${json.type}`),
+            };
+    }
 }
 
 /**
@@ -33,8 +98,8 @@ export interface DataPipeError {
  *
  * @param guildId the guild that the events should come from
  */
-function newDataPipe(guildId: string): Observable<DataPipeEvent | DataPipeError> {
-    return new Observable(subscriber => {
+export function newDataPipe(guildId: string): DataPipe {
+    const observable = new Observable<DataPipeEvent | DataPipeError>(subscriber => {
         try {
             const source = new EventSource(
                 `${window.location.origin}/guilds/${guildId}/data-pipe`
@@ -52,11 +117,12 @@ function newDataPipe(guildId: string): Observable<DataPipeEvent | DataPipeError>
                 }
             };
             source.onmessage = (m): void => {
-                const message = DataPipeEvent.Companion.deserialize(m.type, m.data);
+                const message = decodeMessage(m);
                 subscriber.next(message);
             };
         } catch (e) {
             subscriber.error(e);
         }
     });
+    return new DataPipe(observable);
 }

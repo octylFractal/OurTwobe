@@ -17,8 +17,7 @@
  */
 
 import axios, {AxiosInstance} from "axios";
-import {net} from "common";
-import GuildUpdate = net.octyl.ourtwobe.GuildUpdate;
+import {ChannelId} from "../../data/DiscordIds";
 
 /**
  * Communication-only API interface. The data-pipe is a separate class.
@@ -39,4 +38,13 @@ export class OurTwobeCommApi {
     async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
         return this.client.post("/guilds/", guildUpdate);
     }
+}
+
+export interface ApiOptional<T> {
+    value?: T
+}
+
+export interface GuildUpdate {
+    volume?: number
+    activeChannel?: ApiOptional<ChannelId>
 }

@@ -29,7 +29,6 @@ import io.ktor.routing.RouteSelector
 import io.ktor.routing.RouteSelectorEvaluation
 import io.ktor.routing.RoutingResolveContext
 import io.ktor.util.KtorExperimentalAPI
-import net.octyl.ourtwobe.ApiError
 
 interface Authorization {
     fun isAdmin(user: String): Boolean
