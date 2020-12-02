@@ -22,6 +22,8 @@ import {Selector} from "../redux/selectors";
 
 export function observeStore<S, R>(store: Store<S>, selector: Selector<S, R>): Observable<R> {
     return new Observable<R>(subscriber => {
+        // Fire initial value as well
+        subscriber.next(selector(store.getState()));
         return store.subscribe(() => {
             try {
                 const value = selector(store.getState());

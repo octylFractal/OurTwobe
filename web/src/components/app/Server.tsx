@@ -18,7 +18,6 @@
 
 import React, {useMemo} from "react";
 import {useParams} from "react-router-dom";
-import {hot} from "react-hot-loader/root";
 import {newDataPipe} from "../../server/api/data-pipe";
 import {DataPipeContext} from "../DataPipeContext";
 
@@ -42,4 +41,4 @@ const SpecificServer: React.FC = () => {
     return <Server guildId={guildId}/>;
 };
 
-export default hot(SpecificServer);
+export default SpecificServer;

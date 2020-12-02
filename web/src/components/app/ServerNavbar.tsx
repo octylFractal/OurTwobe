@@ -16,52 +16,54 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {useState} from "react";
+import React, {useContext} from "react";
 import {useParams} from "react-router-dom";
-import {hot} from "react-hot-loader/root";
-import {Collapse, Form, Nav, Navbar, NavbarBrand, NavbarToggler} from "reactstrap";
 import {ServerIcon} from "../ServerIcon";
 import {ChannelSelect} from "../ChannelSelect";
-import {useGuildPipe} from "../../firebase/pipes/common";
+import {DiscordApiContext, DiscordApiProvider} from "../DiscordApiContext";
+import {asNonNull} from "../../utils";
+import {GuildId} from "../../data/DiscordIds";
+import {Form, Nav, Navbar} from "react-bootstrap";
+import {useRandomId} from "../reactHelpers";
+import {useAutoFetch} from "../fetchstore/patch";
 
 interface ServerNavbarProps {
-    guildId: string;
+    guildId: GuildId
 }
 
 const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
-    const [isOpen, setOpen] = useState(false);
-    const toggle = () => void setOpen(prevState => !prevState);
+    const id = useRandomId("collapse");
+    const discordApi = asNonNull(useContext(DiscordApiContext));
+    const guild = useAutoFetch(discordApi.fetch.guild, guildId);
+    const channels = useAutoFetch(discordApi.fetch.channels, guildId);
 
-    const guild = useGuildPipe(guildId);
-    if (!guild) {
-        return <></>;
-    }
-
-    return <Navbar color="dark" dark expand="md">
-        <NavbarBrand className="py-1">
+    return <Navbar bg="dark" variant="dark" expand="md">
+        <Navbar.Brand className="py-1">
             <span className="ourtwobe-at-server">
                 <h4 className="font-family-audiowide d-inline align-middle">{' @ '}</h4>
                 <ServerIcon guildData={guild} className="mr-3" width={32} height={32}/>
                 <span className="font-family-audiowide text-wrap">{guild.name}</span>
             </span>
-        </NavbarBrand>
-        <NavbarToggler onClick={toggle} className="mx-auto"/>
-        <Collapse isOpen={isOpen} navbar>
-            <Nav className="mr-auto" navbar>
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls={id} className="mx-auto"/>
+        <Navbar.Collapse id={id}>
+            <Nav className="mr-auto">
                 <Form inline>
-                    <ChannelSelect guildId={guildId}/>
+                    <ChannelSelect channels={channels}/>
                 </Form>
             </Nav>
-        </Collapse>
+        </Navbar.Collapse>
     </Navbar>;
 };
 
 const SpecificServerNavbar: React.FC = () => {
-    const {guildId} = useParams<{guildId: string}>();
+    const {guildId} = useParams<{ guildId: string }>();
     if (typeof guildId === "undefined") {
         return <></>;
     }
-    return <ServerNavbar guildId={guildId}/>;
+    return <DiscordApiProvider>
+        <ServerNavbar guildId={guildId}/>
+    </DiscordApiProvider>;
 };
 
-export default hot(SpecificServerNavbar);
+export default SpecificServerNavbar;

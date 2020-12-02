@@ -146,13 +146,15 @@ fun Application.module(
 
     fun extractUserId(call: ApplicationCall) = call.requireSession().userId
 
+    fun guildNotFoundError(guildId: String): Nothing = throw ApiErrorException(
+        ApiError("guild.not.found", "Guild $guildId not found"), HttpStatusCode.NotFound
+    )
+
     fun ApplicationCall.getGuildState(): Pair<String, GuildState> {
         val userId = extractUserId(this)
         val guildId = parameters["guildId"]!!
         return guildId to (guildManager.getState(guildId)?.takeIf { guildManager.canSee(guildId, userId) }
-            ?: throw ApiErrorException(
-                ApiError("guild.not.found", "Guild $guildId not found"), HttpStatusCode.NotFound
-            ))
+            ?: guildNotFoundError(guildId))
     }
 
     routing {
@@ -195,8 +197,27 @@ fun Application.module(
 
             // ADMIN ONLY routes
             requireAdmin(authorization, ::extractUserId) {
+                route("/internal") {
+                    get("/guilds") {
+                        call.respond(internalPeeker.getGuilds())
+                    }
+                }
+            }
+
+            route("/discord") {
                 get("/guilds") {
-                    call.respond(internalPeeker.getGuilds())
+                    val (userId) = call.requireSession()
+                    call.respond(guildManager.getGuildDatas(userId))
+                }
+                get("/guilds/{guildId}") {
+                    val (userId) = call.requireSession()
+                    val guildId = call.parameters["guildId"]!!
+                    call.respond(guildManager.getGuildData(guildId, userId) ?: guildNotFoundError(guildId))
+                }
+                get("/guilds/{guildId}/channels") {
+                    val (userId) = call.requireSession()
+                    val guildId = call.parameters["guildId"]!!
+                    call.respond(guildManager.getChannelDatas(guildId, userId) ?: guildNotFoundError(guildId))
                 }
             }
 

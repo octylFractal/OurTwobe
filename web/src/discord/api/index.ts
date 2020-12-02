@@ -17,21 +17,83 @@
  */
 
 import {User} from "./response/User";
-import axios, {AxiosInstance} from "axios";
+import axios, {AxiosError, AxiosInstance, AxiosRequestConfig} from "axios";
+import {GuildId} from "../../data/DiscordIds";
+import {Channel} from "./response/Channel";
+import {Guild} from "./response/Guild";
 
+const DISCORD_BASE = "https://discord.com/api/v8";
+const OURTWOBE_BASE = "/api/discord";
+
+/**
+ * A mostly-raw Discord API. Uses some transformations when the raw Discord data is hard to use, or
+ * not well-represented in ECMAScript.
+ */
 export class DiscordApi {
     private readonly client: AxiosInstance;
 
-    constructor(token: string) {
-        this.client = axios.create({
-            baseURL: "https://discord.com/api/v8/",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    /**
+     * A unique identifier for this API instance. Can be used to detect instance changes efficiently.
+     */
+    get unique(): unknown {
+        return this.token;
     }
 
-    async getMe(): Promise<User> {
-        return this.client.get("/me");
+    constructor(private readonly token: string) {
+        this.client = axios.create();
+    }
+
+    private async rateLimitedGet<R>(url: string, target: "discord" | "ourtwobe"): Promise<R> {
+        const fixedUrl = `${target === "discord" ? DISCORD_BASE : OURTWOBE_BASE}${url}`;
+        const conf: AxiosRequestConfig = target === "discord"
+            ? {
+                headers: {
+                    Authorization: `Bearer ${this.token}`,
+                },
+            }
+            : {
+                auth: {
+                    username: "discord",
+                    password: this.token,
+                },
+            };
+        for (let i = 0; i < 5; i++) {
+            try {
+                return (await this.client.get(fixedUrl, conf)).data;
+            } catch (e) {
+                const axios = e as AxiosError;
+                if ("response" in axios && axios.response?.status === 429) {
+                    // We are being rate limited :)
+                    const delay = axios.response.data.retry_after * 1000;
+                    await new Promise(resolve => {
+                        setTimeout(resolve, delay);
+                    });
+                    continue;
+                }
+                throw e;
+            }
+        }
+        throw new Error(`Failed to retrieve ${url} before running out of retries`);
+    }
+
+    getMe(): Promise<User> {
+        return this.rateLimitedGet(`/users/@me`, "discord");
+    }
+
+    getGuilds(): Promise<Guild[]> {
+        return this.rateLimitedGet<Guild[]>(`/guilds`, "ourtwobe");
+    }
+
+    getGuild(guildId: GuildId): Promise<Guild> {
+        return this.rateLimitedGet(`/guilds/${guildId}`, "ourtwobe");
+    }
+
+    /**
+     * Get the channels in the guild, they will be ordered already.
+     *
+     * @param guildId the guild to get channels from
+     */
+    getChannels(guildId: GuildId): Promise<Channel[]> {
+        return this.rateLimitedGet(`/guilds/${guildId}/channels`, "ourtwobe");
     }
 }

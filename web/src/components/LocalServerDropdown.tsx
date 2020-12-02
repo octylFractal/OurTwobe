@@ -16,13 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {connect} from "react-redux";
-import {LocalState} from "../redux/store";
 import {ServerDropdown} from "./ServerDropdown";
+import React, {useContext} from "react";
+import {DiscordApiContext} from "./DiscordApiContext";
+import {asNonNull} from "../utils";
+import {useAutoFetch} from "./fetchstore/patch";
 
-export const LocalServerDropdown = connect((state: LocalState) => {
-    const uid = state.userInfo.uid;
-    return {
-        uid,
-    };
-})(ServerDropdown);
+export const LocalServerDropdown: React.FC = () => {
+    const discordApi = asNonNull(useContext(DiscordApiContext));
+    const guilds = useAutoFetch(discordApi.fetch.guilds, discordApi.api.unique);
+    return <ServerDropdown guilds={guilds}/>;
+};

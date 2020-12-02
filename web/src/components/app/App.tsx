@@ -17,51 +17,51 @@
  */
 
 import React from "react";
-import {hot} from "react-hot-loader/root";
 import {Provider} from "react-redux";
-import {BrowserRouter as Router, Route, Switch} from "react-router-dom";
-import {Container} from "reactstrap";
+import {BrowserRouter as Router, Route} from "react-router-dom";
 import {store} from "../../redux/store";
 import ScrollToTop from "../compat/ScrollToTop";
 import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
 import {AppNavbar} from "./AppNavbar";
+import {Container} from "react-bootstrap";
+import Switch from "react-bootstrap/Switch";
 
-const SplashLazy = React.lazy(() => import("./Splash"));
+const SplashLazy = React.lazy(async () => import("./Splash"));
 const LoginHandlerLazy = React.lazy(() => import("./LoginHandler"));
 const ServerLazy = React.lazy(() => import("./Server"));
 const ServerNavbarLazy = React.lazy(() => import("./ServerNavbar"));
 
-const HotPortion = hot(() => {
-    return <SimpleErrorBoundary context="the application root">
-        <AppNavbar/>
-        <React.Suspense fallback={<p>Loading...</p>}>
-            <Switch>
-                <Route path="/guild/:guildId/">
-                    <ServerNavbarLazy/>
-                </Route>
-            </Switch>
-            <Container fluid={true} className="p-3">
-                <Switch>
-                    <Route path="/discord/">
-                        <LoginHandlerLazy/>
-                    </Route>
-                    <Route path="/guild/:guildId">
-                        <ServerLazy/>
-                    </Route>
-                    <Route path="/">
-                        <SplashLazy/>
-                    </Route>
-                </Switch>
-            </Container>
-        </React.Suspense>
-    </SimpleErrorBoundary>;
-});
-
 export const App: React.FC = () => {
-    return <Router>
-        <ScrollToTop/>
-        <Provider store={store}>
-            <HotPortion/>
-        </Provider>
-    </Router>;
+    return <Provider store={store}>
+        <SimpleErrorBoundary context="the application root">
+            <Router>
+                <ScrollToTop/>
+                <AppNavbar/>
+                <Route path="/server/:guildId/">
+                    <React.Suspense fallback={<p>Loading...</p>}>
+                        <ServerNavbarLazy/>
+                    </React.Suspense>
+                </Route>
+                <Container fluid className="p-3">
+                    <Switch>
+                        <Route path="/discord/">
+                            <React.Suspense fallback={<p>Loading...</p>}>
+                                <LoginHandlerLazy/>
+                            </React.Suspense>
+                        </Route>
+                        <Route path="/server/:guildId">
+                            <React.Suspense fallback={<p>Loading...</p>}>
+                                <ServerLazy/>
+                            </React.Suspense>
+                        </Route>
+                        <Route exact path="/">
+                            <React.Suspense fallback={<p>Loading...</p>}>
+                                <SplashLazy/>
+                            </React.Suspense>
+                        </Route>
+                    </Switch>
+                </Container>
+            </Router>
+        </SimpleErrorBoundary>
+    </Provider>;
 };

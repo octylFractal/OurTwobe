@@ -19,7 +19,11 @@
 import {connect} from "react-redux";
 import {LocalState} from "../redux/store";
 import {UserState} from "./UserState";
+import {userToken} from "../redux/reducer";
 
-export const LocalUserState = connect((state: LocalState) => ({
-    userInfo: state.userInfo,
-}))(UserState);
+export const LocalUserState = connect(
+    (state: LocalState) => ({
+        userInfo: state.userInfo,
+    }),
+    {logOut: userToken.logout}
+)(UserState);

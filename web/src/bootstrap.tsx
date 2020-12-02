@@ -17,9 +17,7 @@
  */
 
 import $ from "jquery";
-import "react-hot-loader";
 import "./css/css";
-import "./firebase/setup";
 import {renderApp} from "./react-setup";
 import {subscribeSelectors} from "./rx/subscribeSelectors";
 

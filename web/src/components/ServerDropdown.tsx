@@ -16,62 +16,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Dropdown, DropdownItem, DropdownMenu, DropdownToggle} from "reactstrap";
-import React, {useEffect, useMemo, useState} from "react";
+import {Dropdown, NavDropdown, NavItem, NavLink} from "react-bootstrap";
+import React from "react";
 import {RoutedDropdownLink} from "./compat/RoutedDropdownLink";
-import classNames from "classnames";
-import {net} from "common";
 import {ServerIcon} from "./ServerIcon";
-import {GuildId, UserId} from "../data/DiscordIds";
-import {firebaseApp} from "../firebase/setup";
-import {attachFirebase} from "../firebase/pipes";
-import GuildData = net.octyl.ourtwobe.GuildData;
+import {Guild} from "../discord/api/response/Guild";
 
-export interface SeriesDropdownProps {
-    uid?: UserId;
+export interface ServerDropdownProps {
+    guilds: Guild[]
 }
 
-export const ServerDropdown: React.FC<SeriesDropdownProps> = ({uid}) => {
-    const [open, setOpen] = useState(false);
-    const toggle = () => void setOpen(prevState => !prevState);
-    const [guilds, setGuilds] = useState<Record<GuildId, GuildData>>({});
-    const guildArray = useMemo(() => {
-        return Object.values(guilds).sort((a, b) => a.name.localeCompare(b.name));
-    }, [guilds]);
-
-    useEffect(() => {
-        if (typeof uid === "undefined") {
-            return;
-        }
-
-        const guildsByUser = firebaseApp.firestore()
-            .collectionGroup("users")
-            .where("id", "==", uid);
-
-        return attachFirebase(
-            `guilds of user ${uid}`,
-            guildsByUser,
-            data => data.id,
-            setGuilds,
-        );
-    }, [uid]);
-
-    if (typeof uid === "undefined") {
-        return <></>;
-    }
-
-    const classes = classNames({
-        disabled: guildArray.length === 0
-    });
-
-    return <Dropdown isOpen={open} toggle={toggle} nav inNavbar>
-        <DropdownToggle nav caret className={classes}>
-            Server
-        </DropdownToggle>
-        <DropdownMenu>
-            {guildArray.length === 0
-                ? <DropdownItem disabled>No servers.</DropdownItem>
-                : guildArray.map(server =>
+export const ServerDropdown: React.FC<ServerDropdownProps> = ({guilds}) => {
+    return <Dropdown as={NavItem}>
+        <Dropdown.Toggle as={NavLink} disabled={guilds.length === 0}>Server</Dropdown.Toggle>
+        <Dropdown.Menu className="server-dropdown">
+            {guilds.length === 0
+                ? <NavDropdown.Item disabled>No servers.</NavDropdown.Item>
+                : guilds.map(server =>
                     <RoutedDropdownLink
                         to={`/server/${server.id}`}
                         key={server.id}>
@@ -79,6 +40,6 @@ export const ServerDropdown: React.FC<SeriesDropdownProps> = ({uid}) => {
                         {server.name}
                     </RoutedDropdownLink>
                 )}
-        </DropdownMenu>
+        </Dropdown.Menu>
     </Dropdown>;
 };

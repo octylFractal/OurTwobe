@@ -21,5 +21,6 @@ import ReactDOM from "react-dom";
 import {App} from "./components/app/App";
 
 export function renderApp(container: Element): void {
-    ReactDOM.render(<React.StrictMode><App/></React.StrictMode>, container);
+    const unstableCreateRoot: ReactDOM.Root = ReactDOM.unstable_createRoot(container);
+    unstableCreateRoot.render(<App/>);
 }

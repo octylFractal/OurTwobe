@@ -16,14 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {net} from "common";
 import React from "react";
 import {NavbarImg} from "./NavbagImg";
 import classNames from "classnames";
-import GuildData = net.octyl.ourtwobe.GuildData;
+import {Guild} from "../discord/api/response/Guild";
 
 interface ServerIconProps {
-    guildData: GuildData;
+    guildData: Guild;
     width?: number;
     height?: number;
     className?: string;

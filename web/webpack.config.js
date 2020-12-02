@@ -1,6 +1,5 @@
 /* eslint-env node */
 const path = require('path');
-const fs = require('fs');
 const process = require('process');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
@@ -13,10 +12,13 @@ const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
 const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const {TsconfigPathsPlugin} = require('tsconfig-paths-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const resolveExtensions = ['.ts', '.tsx', '.js'];
 const commonConfig = {
-    entry: './src/index.ts',
+    entry: {
+        main: './src/index.ts',
+    },
     devtool: 'source-map',
     plugins: [
         new CleanWebpackPlugin(),
@@ -28,6 +30,7 @@ const commonConfig = {
             defaultAttribute: 'defer',
         }),
         new ForkTsCheckerWebpackPlugin(),
+        new ESLintPlugin(),
         new FaviconsWebpackPlugin({
             logo: "./src/app/logo.png",
             inject: true,
@@ -53,9 +56,6 @@ const commonConfig = {
                             transpileOnly: true,
                         },
                     },
-                    {
-                        loader: 'eslint-loader',
-                    },
                 ],
             },
             {
@@ -63,7 +63,7 @@ const commonConfig = {
                 include: path.resolve(__dirname, 'src'),
                 use: [
                     'style-loader',
-                    { loader: 'css-loader', options: { importLoaders: 1 } },
+                    {loader: 'css-loader', options: {importLoaders: 1}},
                     'postcss-loader',
                     'sass-loader',
                 ],
@@ -91,13 +91,14 @@ const commonConfig = {
     stats: {
         chunks: true,
     },
+    optimization: {
+        runtimeChunk: "single",
+    },
 };
 
 // A list of modules that are larger than 244kb,
 // just on their own, and trigger asset warnings.
-const modulesThatAreJustTooBig = [
-    "@firebase/firestore"
-].map(name => `npm.${name.replace("/", "~")}`);
+const modulesThatAreJustTooBig = [].map(name => `npm.${name.replace("/", "~")}`);
 
 module.exports = (env, argv) => {
     if (typeof argv !== 'undefined' && argv['mode'] === 'production') {
@@ -139,7 +140,6 @@ module.exports = (env, argv) => {
                 },
             },
             optimization: {
-                runtimeChunk: "single",
                 minimizer: [
                     new TerserJSPlugin(),
                     new OptimizeCSSAssetsPlugin(),
@@ -180,12 +180,7 @@ module.exports = (env, argv) => {
                         'css-loader',
                     ],
                 },
-            ]
-        },
-        resolve: {
-            alias: {
-                'react-dom': '@hot-loader/react-dom',
-            },
+            ],
         },
     });
 };

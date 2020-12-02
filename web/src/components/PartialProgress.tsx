@@ -17,7 +17,7 @@
  */
 
 import React from "react";
-import {Progress} from "reactstrap";
+import ProgressBar from "react-bootstrap/ProgressBar";
 
 export interface PartialProgressProps {
     percentage: number;
@@ -29,7 +29,7 @@ export interface PartialProgressProps {
 export const PartialProgress: React.FC<PartialProgressProps> = ({percentage, start, cap, color}) => {
     if (percentage >= start) {
         const realPercent = Math.min(cap, percentage);
-        return <Progress animated bar color={color} value={realPercent - start}/>;
+        return <ProgressBar animated color={color} now={realPercent - start}/>;
     }
     return null;
 };

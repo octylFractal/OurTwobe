@@ -17,7 +17,7 @@
  */
 
 import React, {ReactNode} from "react";
-import {Alert, Modal, ModalHeader} from "reactstrap";
+import {Alert, Modal} from "react-bootstrap";
 
 interface SimpleErrorBoundaryProps extends React.PropsWithChildren<Record<string, unknown>> {
     context?: string;
@@ -42,10 +42,10 @@ export class SimpleErrorBoundary extends React.Component<SimpleErrorBoundaryProp
     render(): ReactNode {
         if (typeof this.state.error !== "undefined") {
             const error = this.state.error;
-            return <Modal isOpen backdrop="static" size="xl">
-                <ModalHeader>
+            return <Modal show backdrop="static" size="xl">
+                <Modal.Header>
                     An error occurred in {this.props.context || "the application"}.
-                </ModalHeader>
+                </Modal.Header>
                 <Alert color="danger">
                     Raw Error:
                     <code className="bg-dark text-white p-1 m-1">

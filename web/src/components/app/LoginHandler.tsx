@@ -20,7 +20,6 @@ import React, {useEffect, useState} from "react";
 import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
 import {finishDiscordLogIn} from "../../discord/auth";
-import {hot} from "react-hot-loader/root";
 import {Redirect} from "react-router-dom";
 import {connect} from "react-redux";
 import {LocalState} from "../../redux/store";
@@ -55,9 +54,9 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
     </div>;
 };
 
-export default hot(connect((state: LocalState) => ({
+export default connect((state: LocalState) => ({
     loggedIn: state.userInfo.heardFromDiscord && state.userInfo.profile !== null
-}))(LoginHandler));
+}))(LoginHandler);
 
 interface DiscordLoginData {
     access_token: string;

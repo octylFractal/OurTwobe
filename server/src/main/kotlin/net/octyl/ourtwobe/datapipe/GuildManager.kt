@@ -31,6 +31,10 @@ import net.dv8tion.jda.api.events.guild.GuildAvailableEvent
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
+import net.octyl.ourtwobe.api.discorddata.ChannelData
+import net.octyl.ourtwobe.api.discorddata.GuildData
+import net.octyl.ourtwobe.api.discorddata.toChannelData
+import net.octyl.ourtwobe.api.discorddata.toGuildData
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.discord.QueuePlayer
 import java.util.concurrent.ConcurrentHashMap
@@ -86,7 +90,22 @@ class GuildManager(
         jda.guilds.forEach(this::initState)
     }
 
-    fun canSee(guildId: String, viewer: String) = jda.getGuildById(guildId)?.getMemberById(viewer) != null
+    fun getGuildDatas(viewer: String): Set<GuildData> = state.keys.mapNotNullTo(mutableSetOf()) { guildId ->
+        getGuildData(guildId, viewer)
+    }
+
+    private fun getVisibleGuild(guildId: String, viewer: String): Guild? =
+        jda.getGuildById(guildId)?.takeIf { it.getMemberById(viewer) != null }
+
+    fun getGuildData(guildId: String, viewer: String): GuildData? =
+        getVisibleGuild(guildId, viewer)?.toGuildData()
+
+    fun getChannelDatas(guildId: String, viewer: String): List<ChannelData>? =
+        getVisibleGuild(guildId, viewer)?.let { guild ->
+            guild.voiceChannels.map { it.toChannelData() }
+        }
+
+    fun canSee(guildId: String, viewer: String) = getVisibleGuild(guildId, viewer) != null
 
     fun getState(guildId: String): GuildState? = state[guildId]
 }

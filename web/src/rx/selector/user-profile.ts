@@ -23,16 +23,17 @@ import {concatMap} from "rxjs/operators";
 import {userInfo} from "../../redux/reducer";
 import {logErrorAndRetry} from "../observer";
 import {User} from "../../discord/api/response/User";
+import {DiscordApi} from "../../discord/api";
 
 export function subscribe(): void {
-    observeStore(store, createSimpleSelector(state => state.userToken?.discordApi))
+    observeStore(store, createSimpleSelector(state => state.userToken))
         .pipe(
-            concatMap(async api => {
-                if (!api) {
+            concatMap(async token => {
+                if (!token) {
                     store.dispatch(userInfo.clearProfile());
                     return;
                 }
-                const user = await api.getMe();
+                const user = await new DiscordApi(token).getMe();
                 store.dispatch(userInfo.loadProfile({
                     id: user.id,
                     username: user.username,

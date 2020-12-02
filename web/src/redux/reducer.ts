@@ -19,7 +19,6 @@
 import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {LS_CONSTANTS} from "../app/localStorage";
 import {UserId} from "../data/DiscordIds";
-import {DiscordApi} from "../discord/api";
 
 export interface UserProfile {
     id: UserId
@@ -54,33 +53,17 @@ const {actions: userInfo, reducer: userInfoSlice} = createSlice({
     }
 });
 
-export interface UserTokenData {
-    token: string
-    discordApi: DiscordApi
-}
-
-function computeUserTokenData(token: string): UserTokenData
-function computeUserTokenData(token: null): null
-function computeUserTokenData(token: string | null): UserTokenData | null
-function computeUserTokenData(token: string | null): UserTokenData | null {
-    if (token) {
-        return {
-            token,
-            discordApi: new DiscordApi(token),
-        };
-    }
-    return null;
-}
-
 const {actions: userToken, reducer: userTokenSlice} = createSlice({
     name: "userToken",
-    initialState: computeUserTokenData(localStorage.getItem(LS_CONSTANTS.DISCORD_TOKEN)),
+    initialState: localStorage.getItem(LS_CONSTANTS.DISCORD_TOKEN),
     reducers: {
-        login(_, {payload}: PayloadAction<string>): UserTokenData {
-            return computeUserTokenData(payload);
+        login(_, {payload}: PayloadAction<string>): string {
+            localStorage.setItem(LS_CONSTANTS.DISCORD_TOKEN, payload);
+            return payload;
         },
         logout(): null {
-            return computeUserTokenData(null);
+            localStorage.removeItem(LS_CONSTANTS.DISCORD_TOKEN);
+            return null;
         },
     }
 });

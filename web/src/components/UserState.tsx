@@ -19,13 +19,12 @@
 import {faSignInAlt, faSpinner} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {ReactElement} from "react";
-import {DropdownItem, DropdownMenu, DropdownToggle, NavLink, UncontrolledButtonDropdown} from "reactstrap";
 import {generateOAuthLink} from "../discord/auth";
 import {UserInfoRecord, UserProfile} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
-import {Redirect} from "react-router-dom";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
-import {LS_CONSTANTS} from "../app/localStorage";
+import {Nav, NavDropdown} from "react-bootstrap";
+import {useRandomId} from "./reactHelpers";
 
 function loading(): ReactElement {
     return <div className="navbar-text d-inline-flex align-items-center">
@@ -35,42 +34,35 @@ function loading(): ReactElement {
 
 const UserProfileDisplay: React.FC<UserProfile> = (props) => {
     return <>
-        <NavbarImg src={props.avatarUrl} alt="Avatar" className="rounded-circle"/>
+        <NavbarImg src={props.avatarUrl}
+                   alt="Avatar"
+                   className="rounded-circle border border-light"/>
         {props.username}
     </>;
 };
 
 export interface UserStateProps {
-    userInfo: UserInfoRecord;
+    userInfo: UserInfoRecord
+    logOut: () => void
 }
 
-export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord, profile}}) => {
+export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord, profile}, logOut}) => {
+    const id = useRandomId("nav-dropdown");
     if (!heardFromDiscord) {
         return loading();
     }
     if (profile === null) {
         // lazily generate OAuth link to prevent overwriting state
-        return <NavLink href="#" onClick={() => void window.location.assign(generateOAuthLink())}
-                        className="d-block">
-            {/* ensure that we redirect to the home page on log-out */}
-            <Redirect to="/"/>
+        return <Nav.Link href="#" onClick={() => void window.location.assign(generateOAuthLink())}
+                         className="d-block">
             <FontAwesomeIcon icon={faSignInAlt}/> Log In to
             <img className="d-inline-block" height={48} src={DiscordLogo} alt="Discord Logo"/>
-        </NavLink>;
+        </Nav.Link>;
     }
 
-    function logOut(): void {
-        localStorage.removeItem(LS_CONSTANTS.DISCORD_TOKEN);
-    }
-
-    return <UncontrolledButtonDropdown>
-        <DropdownToggle nav caret>
-            <UserProfileDisplay {...profile}/>
-        </DropdownToggle>
-        <DropdownMenu right>
-            <DropdownItem onClick={logOut}>
-                Log Out
-            </DropdownItem>
-        </DropdownMenu>
-    </UncontrolledButtonDropdown>;
+    return <NavDropdown id={id} title={<UserProfileDisplay {...profile}/>}>
+        <NavDropdown.Item onClick={logOut}>
+            Log Out
+        </NavDropdown.Item>
+    </NavDropdown>;
 };

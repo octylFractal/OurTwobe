@@ -16,19 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ReactNode} from "react";
-import {NavLink} from "react-router-dom";
-import {Dropdown} from "react-bootstrap";
+import {GuildId} from "../../../data/DiscordIds";
 
-export interface RoutedDropdownLinkProps {
-    to: string;
-    exact?: boolean;
-    className?: string;
-    children?: ReactNode;
+export interface Guild {
+    readonly id: GuildId
+    readonly name: string
+    readonly iconUrl?: string
 }
-
-export const RoutedDropdownLink: React.FC<RoutedDropdownLinkProps> = (props) => {
-    return <Dropdown.Item as={NavLink}
-                          activeClassName="active"
-                          {...props}/>;
-};

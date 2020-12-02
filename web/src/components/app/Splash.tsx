@@ -16,9 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {hot} from "react-hot-loader/root";
 import React from "react";
-import {Jumbotron} from "reactstrap";
+import {Jumbotron} from "react-bootstrap";
 
 const Splash: React.FC = () => {
     return <div>
@@ -50,4 +49,4 @@ const Splash: React.FC = () => {
     </div>;
 };
 
-export default hot(Splash);
+export default Splash;

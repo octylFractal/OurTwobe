@@ -16,31 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {useEffect, useState} from "react";
-import {Input} from "reactstrap";
-import {useRandomId} from "./reactHelpers";
-import {ChannelId, GuildId} from "../data/DiscordIds";
-import {usePromise} from "./hook/usePromise";
+import React, {useState} from "react";
+import {Channel} from "../discord/api/response/Channel";
+import FormControl from "react-bootstrap/FormControl";
 
 export interface ChannelSelectProps {
-    guildId: GuildId;
+    channels: Channel[]
 }
 
-export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId}) => {
+export const ChannelSelect: React.FC<ChannelSelectProps> = ({channels}) => {
     const [selectedChannel, setSelectedChannel] = useState("!!");
-    const channels = usePromise(async () => {
-        return [];
-    });
 
-    return <Input type="select" name="channel" bsSize="sm"
+    return <FormControl as="select" name="channel" size="sm"
                   value={selectedChannel}
                   onChange={e => void setSelectedChannel(e.currentTarget.value)}>
         <option value="!!">None</option>
-        {(channels.loading ? [] : channels.value)
-            .sort((a, b) => a.order - b.order)
-            .map(channel =>
-                <option key={channel.id} value={channel.id}>{channel.name}</option>
-            )
-        }
-    </Input>;
+        <React.Suspense fallback={<></>}>
+            {channels
+                .map(channel =>
+                    <option key={channel.id} value={channel.id}>{channel.name}</option>
+                )
+            }
+        </React.Suspense>
+    </FormControl>;
 };
