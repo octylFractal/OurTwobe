@@ -20,7 +20,7 @@ import React, {useContext} from "react";
 import {useParams} from "react-router-dom";
 import {ServerIcon} from "../ServerIcon";
 import {ChannelSelect} from "../ChannelSelect";
-import {DiscordApiContext, DiscordApiProvider} from "../DiscordApiContext";
+import {DiscordApiContext} from "../DiscordApiContext";
 import {asNonNull} from "../../utils";
 import {GuildId} from "../../data/DiscordIds";
 import {Form, Nav, Navbar} from "react-bootstrap";
@@ -49,7 +49,7 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
         <Navbar.Collapse id={id}>
             <Nav className="mr-auto">
                 <Form inline>
-                    <ChannelSelect channels={channels}/>
+                    <ChannelSelect guildId={guildId} channels={channels}/>
                 </Form>
             </Nav>
         </Navbar.Collapse>
@@ -61,9 +61,7 @@ const SpecificServerNavbar: React.FC = () => {
     if (typeof guildId === "undefined") {
         return <></>;
     }
-    return <DiscordApiProvider>
-        <ServerNavbar guildId={guildId}/>
-    </DiscordApiProvider>;
+    return <ServerNavbar guildId={guildId}/>;
 };
 
 export default SpecificServerNavbar;

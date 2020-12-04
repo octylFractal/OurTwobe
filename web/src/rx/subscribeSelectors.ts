@@ -17,10 +17,13 @@
  */
 
 import {subscribe as userProfileSubscribe} from "./selector/user-profile";
+import {exposeStore} from "../redux/store";
 
 /**
  * Subscribe all necessary selectors to the store.
  */
 export function subscribeSelectors(): void {
-    userProfileSubscribe();
+    exposeStore(store => {
+        userProfileSubscribe(store);
+    });
 }

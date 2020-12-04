@@ -65,6 +65,9 @@ class QueuePlayer(
         jda.addEventListener(object {
             @SubscribeEvent
             fun onVoiceLeave(event: GuildVoiceLeaveEvent) {
+                if (event.guild.id != guildId) {
+                    return
+                }
                 if (event.member.user.id == jda.selfUser.id && event.channelJoined == null) {
                     guildSettingsHolder.updateSettings {
                         it.copy(activeChannel = null)
@@ -74,6 +77,9 @@ class QueuePlayer(
 
             @SubscribeEvent
             fun onVoiceMove(event: GuildVoiceMoveEvent) {
+                if (event.guild.id != guildId) {
+                    return
+                }
                 if (event.member.user.id == jda.selfUser.id) {
                     guildSettingsHolder.updateSettings {
                         it.copy(activeChannel = event.channelJoined.id)
@@ -89,14 +95,16 @@ class QueuePlayer(
     suspend fun play() {
         supervisorScope {
             var queueDrainJob: Job? = null
-            val audioManager = jda.getGuildById(guildId)!!.audioManager
+            val guild = jda.getGuildById(guildId)!!
+            val audioManager = guild.audioManager
             audioManager.setSpeakingMode(SpeakingMode.SOUNDSHARE)
             audioManager.sendingHandler = sendHandler
             for (command in messaging) {
                 try {
                     exhaustive(when (command) {
                         is PlayerCommand.JoinChannel -> {
-                            val channel = jda.getGuildById(guildId)!!.getVoiceChannelById(command.channel)!!
+                            val channel = guild.getVoiceChannelById(command.channel)
+                                ?: error("Unknown channel: ${command.channel}")
                             logger.info("Joining channel '${channel.name}' (${channel.id})")
                             queueDrainJob = launch { drainQueue(channel) }
                             audioManager.openAudioConnection(channel)

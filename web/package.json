@@ -88,6 +88,7 @@
     "eslint": "^7.14.0",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "eslint-plugin-rxjs": "^2.1.5",
     "extract-css-chunks-webpack-plugin": "^4.8.0",
     "favicons-webpack-plugin": "^4.2.0",
     "file-loader": "^6.2.0",

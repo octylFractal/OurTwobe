@@ -16,32 +16,34 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import axios, {AxiosInstance} from "axios";
 import {ChannelId} from "../../data/DiscordIds";
+import {ApiBase} from "../../util/ApiBase";
 
 /**
  * Communication-only API interface. The data-pipe is a separate class.
  */
-export class OurTwobeCommApi {
-    private readonly client: AxiosInstance;
-
+export class OurTwobeCommApi extends ApiBase {
     constructor(token: string, guildId: string) {
-        this.client = axios.create({
-            baseURL: `${window.location.origin}/guilds/${guildId}/`,
+        super(token, {
+            baseURL: `${window.location.origin}/api/guilds/${guildId}`,
             auth: {
-                username: "communication",
+                username: "discord",
                 password: token,
             },
         });
     }
 
     async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
-        return this.client.post("/guilds/", guildUpdate);
+        return this.doRequest("put", "/", {data: guildUpdate});
     }
 }
 
 export interface ApiOptional<T> {
     value?: T
+}
+
+export function optionalFrom<T>(value: T | undefined): ApiOptional<T> {
+    return typeof value === "undefined" ? {} : {value};
 }
 
 export interface GuildUpdate {

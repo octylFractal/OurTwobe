@@ -18,7 +18,7 @@
 
 import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {LS_CONSTANTS} from "../app/localStorage";
-import {UserId} from "../data/DiscordIds";
+import {GuildId, UserId} from "../data/DiscordIds";
 
 export interface UserProfile {
     id: UserId
@@ -68,9 +68,26 @@ const {actions: userToken, reducer: userTokenSlice} = createSlice({
     }
 });
 
-export {userInfo, userToken};
+export interface GuildState {
+    activeChannel: string | null
+    volume?: number
+}
+type GuildStateMap = Record<GuildId, GuildState>;
+
+const {actions: guildState, reducer: guildStateSlice} = createSlice({
+    name: "guildState",
+    initialState: {} as GuildStateMap,
+    reducers: {
+        updateState(state, {payload}: PayloadAction<GuildState & {guildId: GuildId}>): void {
+            state[payload.guildId] = {...state[payload.guildId], ...payload};
+        },
+    },
+});
+
+export {userInfo, userToken, guildState};
 
 export const reducer = combineReducers({
     userInfo: userInfoSlice,
     userToken: userTokenSlice,
+    guildState: guildStateSlice,
 });

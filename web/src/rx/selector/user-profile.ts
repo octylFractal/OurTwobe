@@ -17,15 +17,16 @@
  */
 
 import {observeStore} from "../redux-observable";
-import {store} from "../../redux/store";
 import {createSimpleSelector} from "../../redux/selectors";
 import {concatMap} from "rxjs/operators";
 import {userInfo} from "../../redux/reducer";
 import {logErrorAndRetry} from "../observer";
 import {User} from "../../discord/api/response/User";
 import {DiscordApi} from "../../discord/api";
+import {LocalState} from "../../redux/store";
+import {Store} from "redux";
 
-export function subscribe(): void {
+export function subscribe(store: Store<LocalState>): void {
     observeStore(store, createSimpleSelector(state => state.userToken))
         .pipe(
             concatMap(async token => {

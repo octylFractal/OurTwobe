@@ -20,12 +20,6 @@ import {LS_CONSTANTS} from "../app/localStorage";
 import secureRandom from "secure-random";
 import queryString from "query-string";
 import {fromByteArray} from "base64-js";
-import {store} from "../redux/store";
-import {userToken} from "../redux/reducer";
-
-export function finishDiscordLogIn(discordToken: string): void {
-    store.dispatch(userToken.login(discordToken));
-}
 
 const baseUrl = 'https://discord.com/api/oauth2/authorize';
 const clientId = '400219515310571520';

@@ -19,16 +19,17 @@
 import React, {useEffect, useState} from "react";
 import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
-import {finishDiscordLogIn} from "../../discord/auth";
 import {Redirect} from "react-router-dom";
 import {connect} from "react-redux";
 import {LocalState} from "../../redux/store";
+import {userToken} from "../../redux/reducer";
 
 interface LoginHandlerProps {
-    loggedIn: boolean;
+    loggedIn: boolean
+    logIn(userToken: string): void
 }
 
-const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
+const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn, logIn}) => {
     const [failed, setFailed] = useState(false);
     useEffect(() => {
         const hashData = queryString.parse(window.location.hash) as DiscordLoginData;
@@ -38,8 +39,8 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
             setFailed(true);
             return;
         }
-        finishDiscordLogIn(hashData.access_token);
-    }, []);
+        logIn(hashData.access_token);
+    }, [logIn]);
 
     if (loggedIn) {
         return <Redirect to="/"/>;
@@ -54,9 +55,14 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn}) => {
     </div>;
 };
 
-export default connect((state: LocalState) => ({
-    loggedIn: state.userInfo.heardFromDiscord && state.userInfo.profile !== null
-}))(LoginHandler);
+export default connect(
+    (state: LocalState) => ({
+        loggedIn: state.userInfo.heardFromDiscord && state.userInfo.profile !== null
+    }),
+    {
+        logIn: userToken.login,
+    },
+)(LoginHandler);
 
 interface DiscordLoginData {
     access_token: string;

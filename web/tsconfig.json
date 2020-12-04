@@ -24,7 +24,8 @@
             "es2017",
             "dom",
             "scripthost"
-        ]
+        ],
+        "skipLibCheck": true
     },
     "exclude": [
         "./build"

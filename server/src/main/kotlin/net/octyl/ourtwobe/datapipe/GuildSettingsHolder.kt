@@ -21,7 +21,7 @@ package net.octyl.ourtwobe.datapipe
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class GuildSettingsHolder {
+class GuildSettingsHolder(private val guildId: String) {
     private val _settings = MutableStateFlow(GuildSettings())
     val settings: StateFlow<GuildSettings> = _settings
 

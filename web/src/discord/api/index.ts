@@ -17,10 +17,11 @@
  */
 
 import {User} from "./response/User";
-import axios, {AxiosError, AxiosInstance, AxiosRequestConfig} from "axios";
+import {AxiosError, AxiosRequestConfig} from "axios";
 import {GuildId} from "../../data/DiscordIds";
 import {Channel} from "./response/Channel";
 import {Guild} from "./response/Guild";
+import {ApiBase} from "../../util/ApiBase";
 
 const DISCORD_BASE = "https://discord.com/api/v8";
 const OURTWOBE_BASE = "/api/discord";
@@ -29,18 +30,10 @@ const OURTWOBE_BASE = "/api/discord";
  * A mostly-raw Discord API. Uses some transformations when the raw Discord data is hard to use, or
  * not well-represented in ECMAScript.
  */
-export class DiscordApi {
-    private readonly client: AxiosInstance;
+export class DiscordApi extends ApiBase {
 
-    /**
-     * A unique identifier for this API instance. Can be used to detect instance changes efficiently.
-     */
-    get unique(): unknown {
-        return this.token;
-    }
-
-    constructor(private readonly token: string) {
-        this.client = axios.create();
+    constructor(token: string) {
+        super(token);
     }
 
     private async rateLimitedGet<R>(url: string, target: "discord" | "ourtwobe"): Promise<R> {
@@ -59,7 +52,7 @@ export class DiscordApi {
             };
         for (let i = 0; i < 5; i++) {
             try {
-                return (await this.client.get(fixedUrl, conf)).data;
+                return this.doRequest("get", fixedUrl, conf);
             } catch (e) {
                 const axios = e as AxiosError;
                 if ("response" in axios && axios.response?.status === 429) {

@@ -1,6 +1,13 @@
+const { join } = require("path");
 module.exports = {
     root: true,
+    ignorePatterns: ['.eslintrc.js'],
     parser: '@typescript-eslint/parser',
+    parserOptions: {
+        ecmaVersion: 2019,
+        project: join(__dirname, "./tsconfig.json"),
+        sourceType: "module"
+    },
     plugins: [
         '@typescript-eslint',
     ],
@@ -10,6 +17,7 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         "plugin:react/recommended",
         "plugin:react-hooks/recommended",
+        'plugin:rxjs/recommended',
     ],
     settings: {
         "react": {
@@ -27,7 +35,7 @@ module.exports = {
             },
         ],
     },
-    "overrides": [
+    overrides: [
         {
             "files": ["*.js"],
             "rules": {

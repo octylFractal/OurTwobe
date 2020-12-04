@@ -27,6 +27,7 @@ import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.auth.Principal
+import io.ktor.auth.UnauthorizedResponse
 import io.ktor.auth.authenticate
 import io.ktor.auth.basic
 import io.ktor.client.utils.EmptyContent
@@ -124,6 +125,11 @@ fun Application.module(
         }
         status(HttpStatusCode.InternalServerError) {
             call.respond(ApiError("internal.server.error", "An error has occurred in OurTwobe."))
+        }
+        status(HttpStatusCode.Unauthorized) {
+            if (subject is UnauthorizedResponse) {
+                call.respond(UnauthorizedResponse())
+            }
         }
         exception<ApiErrorException> {
             call.respond(it.statusCode, it.error)
@@ -223,8 +229,16 @@ fun Application.module(
 
             route("/guilds/{guildId}") {
                 put {
+                    val (userId) = call.requireSession()
                     val body = call.receive<GuildUpdate>()
-                    val (_, state) = call.getGuildState()
+                    val (guildId, state) = call.getGuildState()
+                    body.activeChannel?.value?.let {
+                        if (!guildManager.canSeeChannel(guildId, userId, it)) {
+                            throw ApiErrorException(
+                                ApiError("channel.not.found", "Channel $it in $guildId not found"), HttpStatusCode.NotFound
+                            )
+                        }
+                    }
                     state.guildSettingsHolder.updateSettings { settings ->
                         var (volume, activeChannel) = settings
                         body.volume?.let {

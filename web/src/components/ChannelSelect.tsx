@@ -16,21 +16,47 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {useState} from "react";
+import React, {ChangeEvent} from "react";
 import {Channel} from "../discord/api/response/Channel";
 import FormControl from "react-bootstrap/FormControl";
+import {useSelector} from "react-redux";
+import {LocalState} from "../redux/store";
+import {ChannelId, GuildId} from "../data/DiscordIds";
+import {CommApiContext} from "./CommApiContext";
+import {useNonNullContext} from "./hook/useNonNullContext";
+import {optionalFrom} from "../server/api/communication";
 
 export interface ChannelSelectProps {
+    guildId: GuildId
     channels: Channel[]
 }
 
-export const ChannelSelect: React.FC<ChannelSelectProps> = ({channels}) => {
-    const [selectedChannel, setSelectedChannel] = useState("!!");
+const NONE = "!!";
+
+export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels}) => {
+    const selectedChannel = useSelector((state: LocalState) => state.guildState[guildId]?.activeChannel);
+    const commApi = useNonNullContext(CommApiContext);
+
+    function setSelectedChannel(channel: ChannelId | undefined): void {
+        commApi.updateGuildSettings({
+            activeChannel: optionalFrom(channel),
+        })
+            .catch(err =>
+                // This should really be more visible, but I can't be arsed right now
+                console.error(err)
+            );
+    }
 
     return <FormControl as="select" name="channel" size="sm"
-                  value={selectedChannel}
-                  onChange={e => void setSelectedChannel(e.currentTarget.value)}>
-        <option value="!!">None</option>
+                        value={selectedChannel || NONE}
+                        onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                            e.preventDefault();
+                            const value = e.currentTarget.value;
+                            // I have to reassign this apparently
+                            e.currentTarget.value = selectedChannel || NONE;
+                            setSelectedChannel(value === NONE ? undefined : value);
+                        }}>
+        <option value={NONE}>None</option>
         <React.Suspense fallback={<></>}>
             {channels
                 .map(channel =>

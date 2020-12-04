@@ -18,16 +18,23 @@
 
 import {configureStore, Store} from "@reduxjs/toolkit";
 import {reducer} from "./reducer";
-import {from, InteropObservable} from "rxjs";
+import React from "react";
+import {Provider} from "react-redux";
 
-export const store = configureStore({
+const store = configureStore({
     reducer
 });
+
+export const ExposeStore: React.FC = ({children}) => {
+    return React.createElement(Provider, {
+        store,
+    }, children);
+};
+
+export function exposeStore(consumer: (store: Store<LocalState>) => void): void {
+    consumer(store);
+}
 
 type StoreToState<T extends Store> = T extends Store<infer R> ? R : never;
 
 export type LocalState = StoreToState<typeof store>;
-
-export const state$ =
-    // little hack to work around rxjs types being a pain
-    from(store as unknown as InteropObservable<LocalState>);

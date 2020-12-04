@@ -48,7 +48,7 @@ class GuildManager(
     private fun initState(guild: Guild) {
         state.computeIfAbsent(guild.id) { guildId ->
             guild.audioManager.closeAudioConnection()
-            val guildSettingsHolder = GuildSettingsHolder()
+            val guildSettingsHolder = GuildSettingsHolder(guildId)
             val queueManager = QueueManager()
             val queuePlayer = QueuePlayer(guildId, jda, queueManager, guildSettingsHolder)
             queueScope.launch {
@@ -106,6 +106,10 @@ class GuildManager(
         }
 
     fun canSee(guildId: String, viewer: String) = getVisibleGuild(guildId, viewer) != null
+
+    fun canSeeChannel(guildId: String, viewer: String, channelId: String): Boolean {
+        return getVisibleGuild(guildId, viewer)?.getVoiceChannelById(channelId) != null
+    }
 
     fun getState(guildId: String): GuildState? = state[guildId]
 }

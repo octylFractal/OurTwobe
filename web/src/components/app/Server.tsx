@@ -16,29 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {useMemo} from "react";
-import {useParams} from "react-router-dom";
-import {newDataPipe} from "../../server/api/data-pipe";
-import {DataPipeContext} from "../DataPipeContext";
+import React from "react";
 
-interface ServerProps {
-    guildId: string;
-}
-
-const Server: React.FC<ServerProps> = ({guildId}) => {
-    const pipe = useMemo(() => {
-        return newDataPipe(guildId);
-    }, [guildId]);
-    return <DataPipeContext.Provider value={pipe}>
-    </DataPipeContext.Provider>;
+const Server: React.FC = () => {
+    return <>This is the server.</>;
 };
 
-const SpecificServer: React.FC = () => {
-    const {guildId} = useParams<{guildId: string}>();
-    if (typeof guildId === "undefined") {
-        return <></>;
-    }
-    return <Server guildId={guildId}/>;
-};
-
-export default SpecificServer;
+export default Server;

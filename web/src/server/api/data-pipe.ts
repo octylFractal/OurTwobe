@@ -17,7 +17,7 @@
  */
 
 import {Observable} from "rxjs";
-import {Writeable} from "../../utils";
+import {oKeys, runBlock, Writeable} from "../../utils";
 
 export interface DataPipeError {
     error: true
@@ -44,6 +44,17 @@ export interface ProgressItem {
 
 export type DataPipeEvent = GuildSettings | QueueItem | ProgressItem;
 
+const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
+    // Force an object with all types present
+    const obj: {[T in DataPipeEvent["type"]]: true} = {
+        guildSettings: true,
+        queueItem: true,
+        progressItem: true,
+    };
+    // Collect its keys as a set
+    return new Set(oKeys(obj));
+});
+
 export interface PlayableItem {
     readonly youtubeId: string
     readonly title: string
@@ -61,34 +72,36 @@ export interface Thumbnail {
 
 export class DataPipe {
     constructor(
-        readonly observable:  Observable<DataPipeEvent | DataPipeError>,
+        readonly observable: Observable<DataPipeEvent | DataPipeError>,
     ) {
     }
 }
 
-function decodeMessage(m: MessageEvent): DataPipeEvent | DataPipeError {
-    let json: Writeable<DataPipeEvent | {type: "some string that will never actually be sent as a type"}>;
-    try {
-        json = JSON.parse(m.data);
-    } catch (e) {
-        return {
-            error: true,
-            value: e,
-        };
-    }
-    // hack the type on
-    (json as {type: string}).type = m.type;
-    switch (json.type) {
-        case 'guildSettings':
-        case 'queueItem':
-        case 'progressItem':
+function registerOurEventListener(
+    es: EventSource,
+    type: DataPipeEvent["type"],
+    consumer: (next: DataPipeEvent | DataPipeError) => void
+): void {
+    function decodeMessage(m: MessageEvent): DataPipeEvent | DataPipeError {
+        try {
+            const json = JSON.parse(m.data) as Writeable<DataPipeEvent>;
+            json.type = type;
             return json;
-        default:
+        } catch (e) {
             return {
                 error: true,
-                value: new Error(`Unknown type: ${json.type}`),
+                value: e,
             };
+        }
     }
+
+    es.addEventListener(type, (e: Event) => {
+        if (!(e instanceof MessageEvent)) {
+            throw new Error("This is quite wrong.");
+        }
+        const message = decodeMessage(e);
+        consumer(message);
+    });
 }
 
 /**
@@ -102,7 +115,7 @@ export function newDataPipe(guildId: string): DataPipe {
     const observable = new Observable<DataPipeEvent | DataPipeError>(subscriber => {
         try {
             const source = new EventSource(
-                `${window.location.origin}/guilds/${guildId}/data-pipe`
+                `${window.location.origin}/api/guilds/${guildId}/data-pipe`
             );
             source.onerror = (e): void => {
                 if (source.readyState === EventSource.CLOSED) {
@@ -116,12 +129,15 @@ export function newDataPipe(guildId: string): DataPipe {
                     });
                 }
             };
-            source.onmessage = (m): void => {
-                const message = decodeMessage(m);
-                subscriber.next(message);
+            for (const type of ALL_TYPES) {
+                registerOurEventListener(source, type, m => void subscriber.next(m));
+            }
+            return (): void => {
+                source.close();
             };
         } catch (e) {
             subscriber.error(e);
+            return undefined;
         }
     });
     return new DataPipe(observable);
