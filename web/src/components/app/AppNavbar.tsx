@@ -23,12 +23,12 @@ import Logo from "../../app/logo.png";
 import {NavbarImg} from "../NavbagImg";
 import {LocalServerDropdown} from "../LocalServerDropdown";
 import {Nav, Navbar} from "react-bootstrap";
-import {useRandomId} from "../reactHelpers";
+import {useUniqueId} from "../reactHelpers";
 import {DiscordApiProvider} from "../DiscordApiContext";
 import {ServerDropdown} from "../ServerDropdown";
 
 export const AppNavbar: React.FC = () => {
-    const id = useRandomId("collapse");
+    const id = useUniqueId("collapse");
 
     return <Navbar variant="dark" bg="dark" expand="md">
         <Navbar.Brand href="/" className="py-3 pl-0">

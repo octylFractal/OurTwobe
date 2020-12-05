@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
@@ -48,11 +49,17 @@ class GuildManager(
     private fun initState(guild: Guild) {
         state.computeIfAbsent(guild.id) { guildId ->
             guild.audioManager.closeAudioConnection()
-            val guildSettingsHolder = GuildSettingsHolder(guildId)
+            val guildSettingsHolder = GuildSettingsHolder()
             val queueManager = QueueManager()
             val queuePlayer = QueuePlayer(guildId, jda, queueManager, guildSettingsHolder)
             queueScope.launch {
-                queuePlayer.play()
+                queuePlayer.play(
+                    guildSettingsHolder.settings
+                        .map { it.volume }
+                        .distinctUntilChanged()
+                        .map { it / 100.0 }
+                        .stateIn(this)
+                )
             }
             GuildState(queuePlayer, queueManager, guildSettingsHolder).also { state ->
                 queueScope.launch {

@@ -55,6 +55,7 @@ import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.octyl.ourtwobe.InternalPeeker
@@ -187,13 +188,14 @@ fun Application.module(
                 }
 
                 coroutineScope {
-                    launch {
-                        // let the state manager take over pumping events into it
-                        // this method will block until connection close
-                        state.pumpEventsToPipe(pipe)
-                    }
-
-                    val flow = EventFlow(pipe.consumeMessages())
+                    // stateIn ensures it starts consuming immediately
+                    val flow = EventFlow(pipe.consumeMessages().onStart {
+                        launch {
+                            // let the state manager take over pumping events into it
+                            // this method will block until connection close
+                            state.pumpEventsToPipe(pipe)
+                        }
+                    })
                     flow.invokeOnClose {
                         pipe.close()
                     }

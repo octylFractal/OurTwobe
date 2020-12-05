@@ -24,15 +24,16 @@ import {DiscordApiContext} from "../DiscordApiContext";
 import {asNonNull} from "../../utils";
 import {GuildId} from "../../data/DiscordIds";
 import {Form, Nav, Navbar} from "react-bootstrap";
-import {useRandomId} from "../reactHelpers";
+import {useUniqueId} from "../reactHelpers";
 import {useAutoFetch} from "../fetchstore/patch";
+import {VolumeSlider} from "../VolumeSlider";
 
 interface ServerNavbarProps {
     guildId: GuildId
 }
 
 const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
-    const id = useRandomId("collapse");
+    const id = useUniqueId("collapse");
     const discordApi = asNonNull(useContext(DiscordApiContext));
     const guild = useAutoFetch(discordApi.fetch.guild, guildId);
     const channels = useAutoFetch(discordApi.fetch.channels, guildId);
@@ -47,9 +48,11 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls={id} className="mx-auto"/>
         <Navbar.Collapse id={id}>
-            <Nav className="mr-auto">
+            <Nav>
                 <Form inline>
                     <ChannelSelect guildId={guildId} channels={channels}/>
+                    <div className="mr-3"/>
+                    <VolumeSlider guildId={guildId}/>
                 </Form>
             </Nav>
         </Navbar.Collapse>

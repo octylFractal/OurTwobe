@@ -18,9 +18,16 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import org.bytedeco.ffmpeg.global.avutil.AV_OPT_SEARCH_CHILDREN
+import org.bytedeco.ffmpeg.global.avutil.av_opt_set
+
 class Resampler(
     inputFormat: Format,
-    outputFormat: Format
+    outputFormat: Format,
+    volume: Double,
 ) : FilterGraph(inputFormat, outputFormat, listOf(
-    Filter("aresample", "resampler") { }
+    Filter("volume", "volume") {
+        av_opt_set(it, "volume", volume.toString(), AV_OPT_SEARCH_CHILDREN)
+    },
+    Filter("aresample", "resampler") { },
 ))

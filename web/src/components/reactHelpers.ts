@@ -16,8 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {useState} from "react";
+import {useMemo} from "react";
 
-export function useRandomId(name = "random"): string {
-    return useState(() => `${name}-${Math.random()}`)[0];
+const ID_MAP = new Map<string, number>();
+
+export function useUniqueId(name = "random"): string {
+    return useMemo(() => {
+        const val = (ID_MAP.get(name) || 0) + 1;
+        ID_MAP.set(name, val);
+        return `${name}-${val}`;
+    }, [name]);
 }

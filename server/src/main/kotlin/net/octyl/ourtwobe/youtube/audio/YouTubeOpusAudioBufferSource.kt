@@ -21,6 +21,7 @@ package net.octyl.ourtwobe.youtube.audio
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retry
@@ -35,7 +36,7 @@ object YouTubeOpusAudioBufferSource {
     private val logger = KotlinLogging.logger { }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun provideAudio(id: String): Flow<ByteBuffer> {
+    fun provideAudio(id: String, volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return flow {
             YouTubeDlProcessBinding(id).use { ytdl ->
                 val channel = Channels.newChannel(ytdl.process.inputStream)
@@ -43,7 +44,7 @@ object YouTubeOpusAudioBufferSource {
                     id,
                     AvioCallbacks.forChannel(channel)
                 ).use {
-                    emitAll(it.recode())
+                    emitAll(it.recode(volumeStateFlow))
                 }
             }
         }

@@ -24,7 +24,7 @@ import {UserInfoRecord, UserProfile} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 import {Nav, NavDropdown} from "react-bootstrap";
-import {useRandomId} from "./reactHelpers";
+import {useUniqueId} from "./reactHelpers";
 
 function loading(): ReactElement {
     return <div className="navbar-text d-inline-flex align-items-center">
@@ -47,7 +47,7 @@ export interface UserStateProps {
 }
 
 export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord, profile}, logOut}) => {
-    const id = useRandomId("nav-dropdown");
+    const id = useUniqueId("nav-dropdown");
     if (!heardFromDiscord) {
         return loading();
     }

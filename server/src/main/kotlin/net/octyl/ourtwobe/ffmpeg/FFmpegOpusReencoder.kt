@@ -19,12 +19,18 @@
 package net.octyl.ourtwobe.ffmpeg
 
 import com.google.common.base.Throwables
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
 import net.dv8tion.jda.api.audio.OpusPacket
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext
@@ -80,7 +86,7 @@ import javax.sound.sampled.UnsupportedAudioFileException
  */
 class FFmpegOpusReencoder(
     name: String,
-    ioCallbacks: AvioCallbacks
+    ioCallbacks: AvioCallbacks,
 ) : AutoCloseable {
 
     private val closer = AutoCloser()
@@ -90,7 +96,8 @@ class FFmpegOpusReencoder(
     private val frame: AVFrame
     private val packet: AVPacket
     private val audioStreamIndex: Int
-    private val resampler: Resampler
+    private val inputFormat: Format
+    private val outputFormat: Format
     private val audioFifo: AVAudioFifo
     private val outputFrame: AVFrame
     private val opus: Long
@@ -128,20 +135,18 @@ class FFmpegOpusReencoder(
             val desiredFormat = AV_SAMPLE_FMT_S16
             val sampleRate = OpusPacket.OPUS_SAMPLE_RATE
 
-            resampler = closer.register(Resampler(
-                Format(
-                    channelLayout = audioStream.codecpar().channel_layout(),
-                    sampleFormat = audioStream.codecpar().format(),
-                    timeBase = audioStream.time_base(),
-                    sampleRate = audioStream.codecpar().sample_rate()
-                ),
-                Format(
-                    channelLayout = AV_CH_LAYOUT_STEREO,
-                    sampleFormat = desiredFormat,
-                    timeBase = audioStream.time_base(),
-                    sampleRate = sampleRate
-                )
-            ))
+            inputFormat = Format(
+                channelLayout = audioStream.codecpar().channel_layout(),
+                sampleFormat = audioStream.codecpar().format(),
+                timeBase = audioStream.time_base(),
+                sampleRate = audioStream.codecpar().sample_rate()
+            )
+            outputFormat = Format(
+                channelLayout = AV_CH_LAYOUT_STEREO,
+                sampleFormat = desiredFormat,
+                timeBase = audioStream.time_base(),
+                sampleRate = sampleRate
+            )
 
             val decoder = avcodec_find_decoder(audioStream.codecpar().codec_id())
                 ?: throw UnsupportedAudioFileException("Not decode-able by FFmpeg")
@@ -206,8 +211,8 @@ class FFmpegOpusReencoder(
         }
     }
 
-    fun recode(): Flow<ByteBuffer> {
-        return readPackets()
+    fun recode(volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
+        return readPackets(volumeStateFlow)
                 .map {
                     // we must copy the frame before buffering to avoid use-after-free
                     val frame = av_frame_alloc()
@@ -227,30 +232,52 @@ class FFmpegOpusReencoder(
                 }
     }
 
-    private fun readPackets(): Flow<AVFrame> {
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    private fun readPackets(volumeStateFlow: StateFlow<Double>): Flow<AVFrame> {
         return flow {
-            // packet reading loop
-            readPacket@ while (av_read_frame(ctx, packet) >= 0) {
-                try {
-                    if (packet.stream_index() != audioStreamIndex) {
-                        continue
-                    }
-                    var error = avcodec_send_packet(decoderCtx, packet)
-                    check(error == 0) { "Error sending packet to decoder: " + avErr2Str(error) }
-                    // audio frame reading loop
-                    while (true) {
-                        error = avcodec_receive_frame(decoderCtx, frame)
-                        if (error == AVERROR_EAGAIN() || error == AVERROR_EOF) {
-                            continue@readPacket
+            var resampler: Resampler? = null
+            try {
+                coroutineScope {
+                    val resamplerChannel = volumeStateFlow
+                        .map { Resampler(inputFormat, outputFormat, it) }
+                        .buffer(Channel.RENDEZVOUS)
+                        .produceIn(this)
+
+                    resampler = resamplerChannel.receive()
+                    // packet reading loop
+                    readPacket@ while (av_read_frame(ctx, packet) >= 0) {
+                        try {
+                            if (packet.stream_index() != audioStreamIndex) {
+                                continue
+                            }
+                            var error = avcodec_send_packet(decoderCtx, packet)
+                            check(error == 0) { "Error sending packet to decoder: " + avErr2Str(error) }
+                            // audio frame reading loop
+                            while (true) {
+                                error = avcodec_receive_frame(decoderCtx, frame)
+                                if (error == AVERROR_EAGAIN() || error == AVERROR_EOF) {
+                                    continue@readPacket
+                                }
+                                check(error == 0) { "Error getting frame from decoder: " + avErr2Str(error) }
+                                while (true) {
+                                    resamplerChannel.poll()?.let { newResampler ->
+                                        // resampler changed since frame push, clear it out
+                                        emitAll(resampler!!.pushFinalFrame(frame.pts()))
+                                        resampler!!.close()
+                                        resampler = newResampler
+                                    } ?: break
+                                }
+                                emitAll(resampler!!.pushFrame(frame))
+                            }
+                        } finally {
+                            av_packet_unref(packet)
                         }
-                        check(error == 0) { "Error getting frame from decoder: " + avErr2Str(error) }
-                        emitAll(resampler.pushFrame(frame))
                     }
-                } finally {
-                    av_packet_unref(packet)
+                    emitAll(resampler!!.pushFinalFrame(frame.pts()))
                 }
+            } finally {
+                resampler?.close()
             }
-            emitAll(resampler.pushFinalFrame(frame.pts()))
         }
     }
 

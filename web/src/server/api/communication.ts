@@ -23,9 +23,12 @@ import {ApiBase} from "../../util/ApiBase";
  * Communication-only API interface. The data-pipe is a separate class.
  */
 export class OurTwobeCommApi extends ApiBase {
-    constructor(token: string, guildId: string) {
+    constructor(
+        token: string,
+        private readonly guildId: string
+    ) {
         super(token, {
-            baseURL: `${window.location.origin}/api/guilds/${guildId}`,
+            baseURL: `${window.location.origin}/api`,
             auth: {
                 username: "discord",
                 password: token,
@@ -33,8 +36,12 @@ export class OurTwobeCommApi extends ApiBase {
         });
     }
 
+    async authenticate(): Promise<void> {
+        return this.doRequest("get", "/authenticate", {});
+    }
+
     async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
-        return this.doRequest("put", "/", {data: guildUpdate});
+        return this.doRequest("put", `/guilds/${this.guildId}`, {data: guildUpdate});
     }
 }
 

@@ -20,6 +20,7 @@ package net.octyl.ourtwobe.discord.audio
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
@@ -34,9 +35,9 @@ import java.util.concurrent.TimeUnit
 class QueueSendHandler : AudioSendHandler {
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
-    private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.SECONDS.toMillis(1L) / 20L).toInt())
+    private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(500L) / 20L).toInt())
 
-    fun play(playableItems: Flow<PlayableItem>): Flow<DataPipeEvent.ProgressItem> {
+    fun play(playableItems: Flow<PlayableItem>, volumeStateFlow: StateFlow<Double>): Flow<DataPipeEvent.ProgressItem> {
         return playableItems
             .transform { playableItem ->
                 var base = DataPipeEvent.ProgressItem(playableItem, 0.0)
@@ -45,7 +46,7 @@ class QueueSendHandler : AudioSendHandler {
                     val totalMillis = playableItem.duration.toMillis()
                     var millis = 0L
                     var lastPercent = 0.0
-                    YouTubeOpusAudioBufferSource.provideAudio(playableItem.youtubeId)
+                    YouTubeOpusAudioBufferSource.provideAudio(playableItem.youtubeId, volumeStateFlow)
                         .collect {
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
@@ -63,8 +64,8 @@ class QueueSendHandler : AudioSendHandler {
                     emit(base.copy(progress = 100.0) to null)
                 }
             }
-            // store 20s worth of audio in queue
-            .buffer((TimeUnit.SECONDS.toMillis(20L) / 20L).toInt())
+            // store 1s worth of audio in queue
+            .buffer((TimeUnit.SECONDS.toMillis(1L) / 20L).toInt())
             .map { (update, audio) ->
                 audio?.let {
                     audioQueue.send(it)

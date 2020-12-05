@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo} from "react";
 import {DiscordApiProvider} from "../DiscordApiContext";
 import {useParams} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
@@ -19,25 +19,32 @@ interface RealServerContextProps {
 }
 
 const RealServerContext: React.FC<RealServerContextProps> = ({guildId, token, children}) => {
+    const commApi = useMemo(() => new OurTwobeCommApi(token, guildId), [token, guildId]);
     const dispatch = useDispatch();
     useEffect(() => {
         const subscription = newDataPipe(guildId).observable.pipe(
-            tap(subscribeToEventsFunc(guildId, dispatch))
+            tap(subscribeToEventsFunc(guildId, commApi, dispatch))
         ).subscribe();
 
         return () => void subscription.unsubscribe();
-    }, [guildId, dispatch]);
+    }, [guildId, commApi, dispatch]);
     return <DiscordApiProvider>
-        <CommApiContext.Provider value={new OurTwobeCommApi(token, guildId)}>
+        <CommApiContext.Provider value={commApi}>
             {children}
         </CommApiContext.Provider>
     </DiscordApiProvider>;
 };
 
-function subscribeToEventsFunc(guildId: string, dispatch: Dispatch): (e: DataPipeEvent | DataPipeError) => void {
+function subscribeToEventsFunc(guildId: string, api: OurTwobeCommApi, dispatch: Dispatch): (e: DataPipeEvent | DataPipeError) => void {
     return (e): void => {
         if ("error" in e) {
-            console.error("Error in data pipe:", e.value);
+            if (e.value instanceof Event && "type" in e.value && e.value.type === "error") {
+                // This is a disconnect error, potentially our session expired
+                api.authenticate()
+                    .catch(err => console.error("Failed to re-authenticate, server down?", err));
+                return;
+            }
+            console.warn("Error in data pipe:", e.value);
             return;
         }
         switch (e.type) {

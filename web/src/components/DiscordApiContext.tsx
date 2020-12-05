@@ -17,6 +17,10 @@ export interface DiscordApiProviderProps {
 
 const apis = new Map<string, ApiAndFetch>();
 
+export function getApi(userToken: string): DiscordApi {
+    return getApiAndFetch(userToken).api;
+}
+
 function getApiAndFetch(userToken: string): ApiAndFetch {
     let apiAndFetch = apis.get(userToken);
     if (typeof apiAndFetch === "undefined") {

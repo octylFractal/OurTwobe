@@ -92,7 +92,7 @@ class QueuePlayer(
     /**
      * Process player commands and play audio as needed.
      */
-    suspend fun play() {
+    suspend fun play(volumeStateFlow: StateFlow<Double>) {
         supervisorScope {
             var queueDrainJob: Job? = null
             val guild = jda.getGuildById(guildId)!!
@@ -106,7 +106,7 @@ class QueuePlayer(
                             val channel = guild.getVoiceChannelById(command.channel)
                                 ?: error("Unknown channel: ${command.channel}")
                             logger.info("Joining channel '${channel.name}' (${channel.id})")
-                            queueDrainJob = launch { drainQueue(channel) }
+                            queueDrainJob = launch { drainQueue(channel, volumeStateFlow) }
                             audioManager.openAudioConnection(channel)
                         }
                         is PlayerCommand.Disconnect -> {
@@ -125,7 +125,7 @@ class QueuePlayer(
         }
     }
 
-    private suspend fun drainQueue(channel: VoiceChannel) {
+    private suspend fun drainQueue(channel: VoiceChannel, volumeStateFlow: StateFlow<Double>) {
         val itemFlow = flow {
             while (coroutineContext.isActive) {
                 val nextItem = removeNextItem(channel)
@@ -137,7 +137,7 @@ class QueuePlayer(
                 }
             }
         }
-        sendHandler.play(itemFlow).collect {
+        sendHandler.play(itemFlow, volumeStateFlow).collect {
             _events.value = it
         }
     }
