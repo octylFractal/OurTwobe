@@ -16,8 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Observable} from "rxjs";
+import {from, Observable} from "rxjs";
 import {oKeys, runBlock, Writeable} from "../../utils";
+import {concatMap, retryWhen, tap} from "rxjs/operators";
 
 export interface DataPipeError {
     error: true
@@ -110,8 +111,9 @@ function registerOurEventListener(
  * Requires that authentication has already been performed, so there is an active cookie in the browser.
  *
  * @param guildId the guild that the events should come from
+ * @param authenticate function to run authentication if needed
  */
-export function newDataPipe(guildId: string): DataPipe {
+export function newDataPipe(guildId: string, authenticate: () => Promise<void>): DataPipe {
     const observable = new Observable<DataPipeEvent | DataPipeError>(subscriber => {
         try {
             const source = new EventSource(
@@ -122,11 +124,9 @@ export function newDataPipe(guildId: string): DataPipe {
                     // hard failure
                     subscriber.error(e);
                 } else {
-                    // soft failure, materialize error
-                    subscriber.next({
-                        error: true,
-                        value: e,
-                    });
+                    // soft failure, re-auth in place
+                    authenticate()
+                        .catch(err => console.error("Failed to re-authenticate, server down?", err));
                 }
             };
             for (const type of ALL_TYPES) {
@@ -140,5 +140,13 @@ export function newDataPipe(guildId: string): DataPipe {
             return undefined;
         }
     });
-    return new DataPipe(observable);
+    return new DataPipe(observable.pipe(
+        retryWhen(errors =>
+            errors.pipe(
+                tap(err => console.error("Hard error from data-pipe, re-auth & restart...", err)),
+                // Re-authenticate, when it's done retry will occur
+                concatMap(() => from(authenticate())),
+            )
+        )
+    ));
 }

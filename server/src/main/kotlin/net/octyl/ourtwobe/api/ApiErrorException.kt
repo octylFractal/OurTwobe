@@ -20,7 +20,7 @@ package net.octyl.ourtwobe.api
 
 import io.ktor.http.HttpStatusCode
 
-class ApiErrorException(
+open class ApiErrorException(
     val error: ApiError,
     val statusCode: HttpStatusCode,
 ) : RuntimeException("${error.error}: ${error.message} ($statusCode)")

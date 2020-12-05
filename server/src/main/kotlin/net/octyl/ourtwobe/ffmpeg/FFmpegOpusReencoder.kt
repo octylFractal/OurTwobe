@@ -169,7 +169,7 @@ class FFmpegOpusReencoder(
 
             packet = closer.register(
                 av_packet_alloc(),
-                { pkt-> av_packet_free(pkt) }
+                { pkt -> av_packet_free(pkt) }
             ) ?: error("Unable to allocate packet")
 
             val encoderFrameSize = 960
@@ -213,37 +213,38 @@ class FFmpegOpusReencoder(
 
     fun recode(volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return readPackets(volumeStateFlow)
-                .map {
-                    // we must copy the frame before buffering to avoid use-after-free
-                    val frame = av_frame_alloc()
-                    av_frame_ref(frame, it)
-                    frame
+            .map {
+                // we must copy the frame before buffering to avoid use-after-free
+                val frame = av_frame_alloc()
+                av_frame_ref(frame, it)
+                frame
+            }
+            .buffer(capacity = 4)
+            .transform {
+                try {
+                    emitAll(writePacket(it))
+                } finally {
+                    av_frame_free(it)
                 }
-                .buffer(capacity = 4)
-                .transform {
-                    try {
-                        emitAll(writePacket(it))
-                    } finally {
-                        av_frame_free(it)
-                    }
-                }
-                .onCompletion {
+            }
+            .onCompletion { cause ->
+                // Don't bother writing packets to an already dead stream
+                if (cause == null) {
                     emitAll(writePacket(null))
                 }
+            }
     }
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun readPackets(volumeStateFlow: StateFlow<Double>): Flow<AVFrame> {
         return flow {
-            var resampler: Resampler? = null
-            try {
-                coroutineScope {
-                    val resamplerChannel = volumeStateFlow
-                        .map { Resampler(inputFormat, outputFormat, it) }
-                        .buffer(Channel.RENDEZVOUS)
-                        .produceIn(this)
-
-                    resampler = resamplerChannel.receive()
+            coroutineScope {
+                val resamplerChannel = volumeStateFlow
+                    .map { Resampler(inputFormat, outputFormat, it) }
+                    .buffer(Channel.RENDEZVOUS)
+                    .produceIn(this)
+                var resampler = resamplerChannel.receive()
+                try {
                     // packet reading loop
                     readPacket@ while (av_read_frame(ctx, packet) >= 0) {
                         try {
@@ -262,21 +263,23 @@ class FFmpegOpusReencoder(
                                 while (true) {
                                     resamplerChannel.poll()?.let { newResampler ->
                                         // resampler changed since frame push, clear it out
-                                        emitAll(resampler!!.pushFinalFrame(frame.pts()))
-                                        resampler!!.close()
+                                        emitAll(resampler.pushFinalFrame(frame.pts()))
+                                        resampler.close()
                                         resampler = newResampler
                                     } ?: break
                                 }
-                                emitAll(resampler!!.pushFrame(frame))
+                                emitAll(resampler.pushFrame(frame))
                             }
                         } finally {
                             av_packet_unref(packet)
                         }
                     }
-                    emitAll(resampler!!.pushFinalFrame(frame.pts()))
+                    emitAll(resampler.pushFinalFrame(frame.pts()))
+                } finally {
+                    // Kill channel, we stopped listening
+                    resamplerChannel.cancel()
+                    resampler.close()
                 }
-            } finally {
-                resampler?.close()
             }
         }
     }

@@ -22,8 +22,9 @@ const RealServerContext: React.FC<RealServerContextProps> = ({guildId, token, ch
     const commApi = useMemo(() => new OurTwobeCommApi(token, guildId), [token, guildId]);
     const dispatch = useDispatch();
     useEffect(() => {
-        const subscription = newDataPipe(guildId).observable.pipe(
-            tap(subscribeToEventsFunc(guildId, commApi, dispatch))
+        const reAuth = () => commApi.authenticate();
+        const subscription = newDataPipe(guildId, reAuth).observable.pipe(
+            tap(subscribeToEventsFunc(guildId, reAuth, dispatch))
         ).subscribe();
 
         return () => void subscription.unsubscribe();
@@ -35,13 +36,11 @@ const RealServerContext: React.FC<RealServerContextProps> = ({guildId, token, ch
     </DiscordApiProvider>;
 };
 
-function subscribeToEventsFunc(guildId: string, api: OurTwobeCommApi, dispatch: Dispatch): (e: DataPipeEvent | DataPipeError) => void {
+function subscribeToEventsFunc(guildId: string, authenticate: () => Promise<void>, dispatch: Dispatch): (e: DataPipeEvent | DataPipeError) => void {
     return (e): void => {
         if ("error" in e) {
             if (e.value instanceof Event && "type" in e.value && e.value.type === "error") {
                 // This is a disconnect error, potentially our session expired
-                api.authenticate()
-                    .catch(err => console.error("Failed to re-authenticate, server down?", err));
                 return;
             }
             console.warn("Error in data pipe:", e.value);
@@ -52,6 +51,7 @@ function subscribeToEventsFunc(guildId: string, api: OurTwobeCommApi, dispatch: 
                 dispatch(guildState.updateState({...e, guildId}));
                 break;
             case "progressItem":
+                console.log(e.item, e.progress);
                 break;
             case "queueItem":
                 break;

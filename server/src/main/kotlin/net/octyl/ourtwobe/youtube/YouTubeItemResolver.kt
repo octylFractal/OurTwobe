@@ -31,7 +31,11 @@ class YouTubeItemResolver(
 ) {
     fun resolveItems(url: String): Flow<PlayableItem> {
         val videoIds = flow {
-            val parsed = Url(url)
+            val parsed = try {
+                Url(url)
+            } catch (e: Exception) {
+                throw InvalidSubmission(url)
+            }
             when (parsed.host) {
                 "youtube.com", "www.youtube.com" -> {
                     when (parsed.encodedPath) {

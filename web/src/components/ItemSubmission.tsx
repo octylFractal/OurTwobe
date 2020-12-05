@@ -21,11 +21,17 @@ export const ItemSubmission: React.FC = () => {
         commApi.submitItem({
             url: value,
         })
-            .catch(err => {
-                setError(true);
-                console.error("Error submitting item", err);
-            })
-            .then(() => setDisabled(false));
+            .then(
+                // On success: clear value
+                () => setValue(""),
+                // On error: do NOT clear value, set error flag
+                err => {
+                    setError(true);
+                    console.error("Error submitting item", err);
+                }
+            )
+            // On *: clear disabled state
+            .finally(() => setDisabled(false));
     }, [value, commApi, setDisabled, setError]);
 
     return <Form inline onSubmit={onSubmit}>
@@ -44,7 +50,7 @@ export const ItemSubmission: React.FC = () => {
             <Button className="mx-1" type="submit" disabled={disabled || !value}>
                 Submit!
             </Button>
-            {error && <Form.Control.Feedback  className="mx-1">Failed to submit!</Form.Control.Feedback>}
+            {error && <Form.Control.Feedback className="mx-1">Failed to submit!</Form.Control.Feedback>}
         </Form.Group>
     </Form>;
 };

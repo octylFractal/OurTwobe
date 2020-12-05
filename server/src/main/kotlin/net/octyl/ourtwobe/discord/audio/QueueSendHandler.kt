@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transform
 import net.dv8tion.jda.api.audio.AudioSendHandler
@@ -50,7 +51,7 @@ class QueueSendHandler : AudioSendHandler {
                         .collect {
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
-                            if (percent - lastPercent > 0.01) {
+                            if (percent - lastPercent > 0.1) {
                                 lastPercent = percent
                                 if (percent >= 100) {
                                     // don't report the end yet
@@ -72,6 +73,7 @@ class QueueSendHandler : AudioSendHandler {
                 }
                 update
             }
+            .distinctUntilChanged()
     }
 
     override fun canProvide() = true
