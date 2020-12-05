@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit
 class QueueSendHandler : AudioSendHandler {
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
-    private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(500L) / 20L).toInt())
+    private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(40L) / 20L).toInt())
 
     fun play(playableItems: Flow<PlayableItem>, volumeStateFlow: StateFlow<Double>): Flow<DataPipeEvent.ProgressItem> {
         return playableItems
@@ -64,8 +64,8 @@ class QueueSendHandler : AudioSendHandler {
                     emit(base.copy(progress = 100.0) to null)
                 }
             }
-            // store 1s worth of audio in queue
-            .buffer((TimeUnit.SECONDS.toMillis(1L) / 20L).toInt())
+            // store 0.5s worth of audio in queue
+            .buffer((TimeUnit.MILLISECONDS.toMillis(500L) / 20L).toInt())
             .map { (update, audio) ->
                 audio?.let {
                     audioQueue.send(it)

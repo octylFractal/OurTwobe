@@ -27,6 +27,7 @@ import {Form, Nav, Navbar} from "react-bootstrap";
 import {useUniqueId} from "../reactHelpers";
 import {useAutoFetch} from "../fetchstore/patch";
 import {VolumeSlider} from "../VolumeSlider";
+import {ItemSubmission} from "../ItemSubmission";
 
 interface ServerNavbarProps {
     guildId: GuildId
@@ -39,21 +40,25 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
     const channels = useAutoFetch(discordApi.fetch.channels, guildId);
 
     return <Navbar bg="dark" variant="dark" expand="md">
-        <Navbar.Brand className="py-1">
+        <Navbar.Brand className="py-1 border-light mr-3">
             <span className="ourtwobe-at-server">
                 <h4 className="font-family-audiowide d-inline align-middle">{' @ '}</h4>
                 <ServerIcon guildData={guild} className="mr-3" width={32} height={32}/>
-                <span className="font-family-audiowide text-wrap">{guild.name}</span>
+                <span className="font-family-audiowide text-wrap align-middle">{guild.name}</span>
             </span>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls={id} className="mx-auto"/>
         <Navbar.Collapse id={id}>
-            <Nav>
+            <Nav className="my-2">
                 <Form inline>
                     <ChannelSelect guildId={guildId} channels={channels}/>
-                    <div className="mr-3"/>
+                </Form>
+                <div className="mx-3 border-right border-light"/>
+                <Form inline>
                     <VolumeSlider guildId={guildId}/>
                 </Form>
+                <div className="mx-3 border-right border-light"/>
+                <ItemSubmission/>
             </Nav>
         </Navbar.Collapse>
     </Navbar>;

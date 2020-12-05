@@ -43,6 +43,10 @@ export class OurTwobeCommApi extends ApiBase {
     async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
         return this.doRequest("put", `/guilds/${this.guildId}`, {data: guildUpdate});
     }
+
+    async submitItem(item: QueueSubmit): Promise<void> {
+        return this.doRequest("post", `/guilds/${this.guildId}/queue`, {data: item});
+    }
 }
 
 export interface ApiOptional<T> {
@@ -56,4 +60,8 @@ export function optionalFrom<T>(value: T | undefined): ApiOptional<T> {
 export interface GuildUpdate {
     volume?: number
     activeChannel?: ApiOptional<ChannelId>
+}
+
+export interface QueueSubmit {
+    url: string
 }

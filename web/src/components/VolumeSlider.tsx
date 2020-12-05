@@ -70,7 +70,7 @@ export const VolumeSlider: React.FC<VolumeSliderProps> = ({guildId}) => {
             type="range"
             name="volume"
             min={0} max={100}
-            value={userVolume}
+            value={userVolume || 0}
             onChange={(e: ChangeEvent<HTMLInputElement>): void => {
                 setUserVolume(e.currentTarget.valueAsNumber);
             }}

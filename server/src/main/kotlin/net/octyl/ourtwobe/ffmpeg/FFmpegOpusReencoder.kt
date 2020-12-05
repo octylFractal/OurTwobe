@@ -219,7 +219,7 @@ class FFmpegOpusReencoder(
                     av_frame_ref(frame, it)
                     frame
                 }
-                .buffer()
+                .buffer(capacity = 4)
                 .transform {
                     try {
                         emitAll(writePacket(it))
