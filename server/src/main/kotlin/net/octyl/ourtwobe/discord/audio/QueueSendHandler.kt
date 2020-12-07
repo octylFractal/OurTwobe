@@ -83,17 +83,22 @@ class QueueSendHandler(
                         val finished = Semaphore(1, acquiredPermits = 1)
                         launch {
                             // await cancellation token
-                            for (item in cancelFlow.produceIn(this)) {
-                                if (finished.tryAcquire()) {
-                                    // the song is over, kill this coroutine
-                                    return@launch
+                            val cancelChannel = cancelFlow.produceIn(this)
+                            try {
+                                for (item in cancelChannel) {
+                                    if (finished.tryAcquire()) {
+                                        // the song is over, kill this coroutine
+                                        return@launch
+                                    }
+                                    if (item.itemId == playableItem.id) {
+                                        break
+                                    }
                                 }
-                                if (item.itemId == playableItem.id) {
-                                    break
-                                }
+                                // cancel the song
+                                finished.release()
+                            } finally {
+                                cancelChannel.cancel()
                             }
-                            // cancel the song
-                            finished.release()
                         }
                         audioFlow.collect {
                             if (finished.tryAcquire()) {
