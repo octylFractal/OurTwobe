@@ -20,7 +20,6 @@ package net.octyl.ourtwobe.api
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.google.common.collect.Tables
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -33,6 +32,7 @@ import io.ktor.auth.basic
 import io.ktor.client.utils.EmptyContent
 import io.ktor.features.AutoHeadResponse
 import io.ktor.features.CallLogging
+import io.ktor.features.Compression
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
 import io.ktor.http.HttpHeaders
@@ -55,7 +55,6 @@ import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.octyl.ourtwobe.InternalPeeker
@@ -68,7 +67,6 @@ import net.octyl.ourtwobe.discord.DiscordApi
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
 import org.slf4j.event.Level
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger { }
 
@@ -78,10 +76,9 @@ fun Application.module(
     guildManager: GuildManager,
     youTubeItemResolver: YouTubeItemResolver
 ) {
-    // user -> guild -> pipe table
-    val dataPipes = Tables.newCustomTable<String, String, DataPipe>(ConcurrentHashMap(), ::ConcurrentHashMap)
     val api = DiscordApi()
 
+    install(Compression)
     install(AutoHeadResponse)
 
     install(ContentNegotiation) {
@@ -153,9 +150,8 @@ fun Application.module(
 
     fun extractUserId(call: ApplicationCall) = call.requireSession().userId
 
-    fun guildNotFoundError(guildId: String): Nothing = throw ApiErrorException(
-        ApiError("guild.not.found", "Guild $guildId not found"), HttpStatusCode.NotFound
-    )
+    fun guildNotFoundError(guildId: String): Nothing = throw ObjectNotFoundException("Guild", guildId)
+    fun userNotFoundError(userId: String): Nothing = throw ObjectNotFoundException("User", userId)
 
     fun ApplicationCall.getGuildState(): Pair<String, GuildState> {
         val userId = extractUserId(this)
@@ -182,20 +178,15 @@ fun Application.module(
 
                 call.response.header(HttpHeaders.CacheControl, "no-cache")
 
-                val pipe = dataPipes.row(userId).computeIfAbsent(guildId) { DataPipe() }
-                pipe.invokeOnClose {
-                    dataPipes.remove(userId, guildId)
-                }
+                val pipe = DataPipe()
 
                 coroutineScope {
-                    // stateIn ensures it starts consuming immediately
-                    val flow = EventFlow(pipe.consumeMessages().onStart {
-                        launch {
-                            // let the state manager take over pumping events into it
-                            // this method will block until connection close
-                            state.pumpEventsToPipe(pipe)
-                        }
-                    })
+                    launch {
+                        // let the state manager take over pumping events into it
+                        // this method will block until connection close
+                        state.pumpEventsToPipe(pipe)
+                    }
+                    val flow = EventFlow(pipe.consumeMessages())
                     flow.invokeOnClose {
                         pipe.close()
                     }
@@ -213,19 +204,28 @@ fun Application.module(
             }
 
             route("/discord") {
-                get("/guilds") {
-                    val (userId) = call.requireSession()
-                    call.respond(guildManager.getGuildDatas(userId))
+                route("/guilds") {
+                    get {
+                        val (userId) = call.requireSession()
+                        call.respond(guildManager.getGuildDatas(userId))
+                    }
+                    route("/{guildId}") {
+                        get {
+                            val (userId) = call.requireSession()
+                            val guildId = call.parameters["guildId"]!!
+                            call.respond(guildManager.getGuildData(guildId, userId) ?: guildNotFoundError(guildId))
+                        }
+                        get("/channels") {
+                            val (userId) = call.requireSession()
+                            val guildId = call.parameters["guildId"]!!
+                            call.respond(guildManager.getChannelDatas(guildId, userId) ?: guildNotFoundError(guildId))
+                        }
+                    }
                 }
-                get("/guilds/{guildId}") {
-                    val (userId) = call.requireSession()
-                    val guildId = call.parameters["guildId"]!!
-                    call.respond(guildManager.getGuildData(guildId, userId) ?: guildNotFoundError(guildId))
-                }
-                get("/guilds/{guildId}/channels") {
-                    val (userId) = call.requireSession()
-                    val guildId = call.parameters["guildId"]!!
-                    call.respond(guildManager.getChannelDatas(guildId, userId) ?: guildNotFoundError(guildId))
+                get("/users/{userId}") {
+                    val (viewerId) = call.requireSession()
+                    val userId = call.parameters["userId"]!!
+                    call.respond(guildManager.getUserData(viewerId, userId) ?: userNotFoundError(userId))
                 }
             }
 
@@ -236,8 +236,8 @@ fun Application.module(
                     val (guildId, state) = call.getGuildState()
                     body.activeChannel?.value?.let {
                         if (!guildManager.canSeeChannel(guildId, userId, it)) {
-                            throw ApiErrorException(
-                                ApiError("channel.not.found", "Channel $it in $guildId not found"), HttpStatusCode.NotFound
+                            throw ObjectNotFoundException(
+                                "Channel", "$it in $guildId"
                             )
                         }
                     }

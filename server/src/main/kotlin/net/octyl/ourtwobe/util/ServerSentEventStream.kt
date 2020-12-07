@@ -18,14 +18,10 @@
 
 package net.octyl.ourtwobe.util
 
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import net.octyl.ourtwobe.JACKSON
 import java.io.Writer
-import java.time.Duration
 
 /**
  * An abstraction over SSE. Also handles keep-alives.
@@ -33,15 +29,6 @@ import java.time.Duration
 class ServerSentEventStream(
     private val response: Writer,
 ) {
-
-    suspend fun sendKeepAliveForever(interval: Duration) {
-        withContext(CoroutineName("SSE Keep-Alive")) {
-            while (isActive) {
-                sendEvent(Event.Comment("keep alive"))
-                delay(interval.toMillis())
-            }
-        }
-    }
 
     private fun writeField(name: String, value: String) {
         for (line in value.lineSequence()) {
@@ -81,11 +68,11 @@ class ServerSentEventStream(
 sealed class Event {
     object Close : Event()
 
-    class Comment(
+    data class Comment(
         val commentText: String
     ) : Event()
 
-    class Data(
+    data class Data(
         val eventType: String,
         val data: Any,
         val id: String? = null,

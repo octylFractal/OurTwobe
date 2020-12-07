@@ -19,16 +19,14 @@
 import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {LS_CONSTANTS} from "../app/localStorage";
 import {GuildId, UserId} from "../data/DiscordIds";
-
-export interface UserProfile {
-    id: UserId
-    username: string
-    avatarUrl: string
-}
+import {PlayableItem, ProgressItem, QueueItem} from "../server/api/data-pipe";
+import produce from "immer";
+import {oKeys} from "../utils";
+import {User} from "../discord/api/response/User";
 
 export interface UserInfoRecord {
     readonly heardFromDiscord: boolean
-    readonly profile: UserProfile | null
+    readonly profile: User | null
 }
 
 const {actions: userInfo, reducer: userInfoSlice} = createSlice({
@@ -38,7 +36,7 @@ const {actions: userInfo, reducer: userInfoSlice} = createSlice({
         profile: null,
     } as UserInfoRecord,
     reducers: {
-        loadProfile(_, {payload}: PayloadAction<UserProfile>): UserInfoRecord {
+        loadProfile(_, {payload}: PayloadAction<User>): UserInfoRecord {
             return {
                 heardFromDiscord: true,
                 profile: payload,
@@ -68,18 +66,75 @@ const {actions: userToken, reducer: userTokenSlice} = createSlice({
     }
 });
 
-export interface GuildState {
-    activeChannel: string | null
-    volume?: number
+export interface GuildSettings {
+    readonly activeChannel: string | null
+    readonly volume?: number
 }
+
+export interface Queue {
+    readonly items: PlayableItem[]
+}
+
+export interface GuildState {
+    readonly settings: GuildSettings
+    readonly queues: Record<UserId, Queue>
+    readonly playing?: ProgressItem
+}
+
 type GuildStateMap = Record<GuildId, GuildState>;
+
+type GuildPayloadAction<T> = PayloadAction<T & {guildId: GuildId}>;
+
+function dropGuildId<T>(payload: T & {guildId: GuildId}): T {
+    return produce(payload, draft => {
+        const fixedDraft = draft as T & {guildId?: GuildId};
+        delete fixedDraft.guildId;
+    });
+}
 
 const {actions: guildState, reducer: guildStateSlice} = createSlice({
     name: "guildState",
     initialState: {} as GuildStateMap,
     reducers: {
-        updateState(state, {payload}: PayloadAction<GuildState & {guildId: GuildId}>): void {
-            state[payload.guildId] = {...state[payload.guildId], ...payload};
+        updateSettings(state, {payload}: GuildPayloadAction<GuildSettings>): void {
+            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
+                draft.settings = dropGuildId(payload);
+            });
+        },
+        addQueuedItem(state, {payload}: GuildPayloadAction<QueueItem>): void {
+            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
+                draft.queues = produce(draft.queues || {}, queuesDraft => {
+                    queuesDraft[payload.owner] = produce(queuesDraft[payload.owner] || {items: []}, queueDraft => {
+                        queueDraft.items.push(payload.item);
+                    });
+                });
+            });
+        },
+        clearQueues(state, {payload}: GuildPayloadAction<unknown>): void {
+            const guildState = state[payload.guildId] || {};
+            guildState.queues = {};
+            guildState.playing = undefined;
+        },
+        updatePlayingItem(state, {payload}: GuildPayloadAction<ProgressItem>): void {
+            if (state[payload.guildId].playing?.item?.id !== payload.item.id) {
+                // newly playing, de-queue
+                const queues = state[payload.guildId].queues;
+                oKeys(queues)
+                    .forEach(k => {
+                        const items = queues[k]?.items;
+                        if (!items) {
+                            return;
+                        }
+                        const index = items.findIndex(it => it.id == payload.item.id);
+                        if (index === -1) {
+                            return;
+                        }
+                        items.splice(index, 1);
+                    });
+            }
+            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
+                draft.playing = payload.progress >= 100 ? undefined : dropGuildId(payload);
+            });
         },
     },
 });

@@ -16,9 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {from, Observable} from "rxjs";
+import {Observable, of} from "rxjs";
 import {oKeys, runBlock, Writeable} from "../../utils";
-import {concatMap, retryWhen, tap} from "rxjs/operators";
+import {exhaustMap, map, retryWhen, tap} from "rxjs/operators";
+import {logErrorAndRetry} from "../../rx/observer";
 
 export interface DataPipeError {
     error: true
@@ -43,7 +44,34 @@ export interface ProgressItem {
     readonly progress: number
 }
 
-export type DataPipeEvent = GuildSettings | QueueItem | ProgressItem;
+export const NO_PLAYING_ITEM: ProgressItem = {
+    type: "progressItem",
+    item: {
+        youtubeId: "N/A",
+        title: "Nothing",
+        thumbnail: {
+            url: "https://ipfs.octyl.net/ipfs/QmbcJFuGroTNKv1sgeePeW19EkqRZuBkCLpYopbZxt7B1T/ourtwobe_notplaying.png",
+            width: 320,
+            height: 180,
+        },
+        duration: 0,
+        id: "not any in-use ID",
+        submissionTime: 0,
+    },
+    progress: 0,
+};
+
+export interface ClearQueues {
+    readonly type: 'clearQueues'
+}
+
+// Not part of the general event set, it's internal to the DP comms only
+interface KeepAlive {
+    readonly type: 'keepAlive'
+    readonly expectNextAt: number
+}
+
+export type DataPipeEvent = GuildSettings | QueueItem | ProgressItem | ClearQueues;
 
 const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
     // Force an object with all types present
@@ -51,6 +79,7 @@ const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
         guildSettings: true,
         queueItem: true,
         progressItem: true,
+        clearQueues: true,
     };
     // Collect its keys as a set
     return new Set(oKeys(obj));
@@ -60,9 +89,9 @@ export interface PlayableItem {
     readonly youtubeId: string
     readonly title: string
     readonly thumbnail: Thumbnail
-    readonly duration: string
+    readonly duration: number
     readonly id: string
-    readonly submissionTime: string
+    readonly submissionTime: number
 }
 
 export interface Thumbnail {
@@ -78,14 +107,14 @@ export class DataPipe {
     }
 }
 
-function registerOurEventListener(
+function registerOurEventListener<E extends DataPipeEvent | KeepAlive>(
     es: EventSource,
-    type: DataPipeEvent["type"],
-    consumer: (next: DataPipeEvent | DataPipeError) => void
+    type: E["type"],
+    consumer: (next: E | DataPipeError) => void
 ): void {
-    function decodeMessage(m: MessageEvent): DataPipeEvent | DataPipeError {
+    function decodeMessage(m: MessageEvent): E | DataPipeError {
         try {
-            const json = JSON.parse(m.data) as Writeable<DataPipeEvent>;
+            const json = JSON.parse(m.data) as Writeable<E>;
             json.type = type;
             return json;
         } catch (e) {
@@ -104,6 +133,20 @@ function registerOurEventListener(
         consumer(message);
     });
 }
+
+function attachKeepAliveWatcher(source: EventSource, killDataPipe: () => void): void {
+    let keepAliveTimer: number | undefined = undefined;
+    registerOurEventListener<KeepAlive>(source, 'keepAlive', m => {
+        if ("error" in m) {
+            console.error("Error getting timeout", m.value);
+            return;
+        }
+        clearTimeout(keepAliveTimer);
+        keepAliveTimer = setTimeout(killDataPipe, m.expectNextAt - Date.now());
+    });
+}
+
+const MANUAL_RESET = "Manually resetting pipe due to Keep Alive miss";
 
 /**
  * Create a new data-pipe observable.
@@ -130,8 +173,14 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
                 }
             };
             for (const type of ALL_TYPES) {
-                registerOurEventListener(source, type, m => void subscriber.next(m));
+                registerOurEventListener<DataPipeEvent>(source, type, m => void subscriber.next(m));
             }
+
+            attachKeepAliveWatcher(source, () => {
+                console.log("Assuming data-pipe connection lost!");
+                source.close();
+                subscriber.error(MANUAL_RESET);
+            });
             return (): void => {
                 source.close();
             };
@@ -143,9 +192,18 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
     return new DataPipe(observable.pipe(
         retryWhen(errors =>
             errors.pipe(
-                tap(err => console.error("Hard error from data-pipe, re-auth & restart...", err)),
+                tap(err => {
+                    if (err !== MANUAL_RESET) {
+                        console.error("Hard error from data-pipe, re-auth & restart...", err);
+                    }
+                }),
                 // Re-authenticate, when it's done retry will occur
-                concatMap(() => from(authenticate())),
+                exhaustMap(() =>
+                    of({}).pipe(
+                        map(authenticate),
+                        logErrorAndRetry("authentication")
+                    )
+                ),
             )
         )
     ));

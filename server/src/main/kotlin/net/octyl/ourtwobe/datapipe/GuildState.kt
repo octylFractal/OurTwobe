@@ -42,6 +42,7 @@ class GuildState(
             }
 
             launch {
+                pipe.sendData(DataPipeEvent.ClearQueues)
                 for ((userId, queue) in queueManager.getQueues()) {
                     for (item in queue) {
                         pipe.sendData(DataPipeEvent.QueueItem(

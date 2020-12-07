@@ -25,12 +25,12 @@ dependencies {
     implementation(platform(kotlin("bom")))
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.4.1"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.4.2"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    implementation(platform("io.ktor:ktor-bom:1.4.1"))
+    implementation(platform("io.ktor:ktor-bom:1.4.3"))
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-netty")
     implementation("io.ktor:ktor-client-core")
@@ -41,7 +41,7 @@ dependencies {
 
     implementation("com.google.guava:guava:30.0-jre")
 
-    implementation("net.dv8tion:JDA:4.2.0_214")
+    implementation("net.dv8tion:JDA:4.2.0_222")
 
     val javacppPresets = mapOf(
         "ffmpeg" to "4.3.1",
@@ -72,7 +72,7 @@ dependencies {
     }
     implementation("io.github.microutils:kotlin-logging:2.0.3")
 
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.11.3"))
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.12.0"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-properties")

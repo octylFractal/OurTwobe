@@ -17,9 +17,33 @@
  */
 
 import React from "react";
+import {useSelector} from "react-redux";
+import {LocalState} from "../../redux/store";
+import {useParams} from "react-router-dom";
+import {UserIdQueue} from "../UserQueue";
+import {PlayableItemCard} from "../PlayableItemCard";
+import {NO_PLAYING_ITEM} from "../../server/api/data-pipe";
+import {Comparators} from "../../util/compare";
 
 const Server: React.FC = () => {
-    return <>This is the server.</>;
+    const {guildId} = useParams<{ guildId: string }>();
+    const queues = useSelector((state: LocalState) => state.guildState[guildId]?.queues || {});
+    const nowPlaying = useSelector((state: LocalState) => state.guildState[guildId]?.playing || NO_PLAYING_ITEM);
+    return <div className="d-flex flex-column">
+        <div className="d-inline-flex flex-column align-items-center">
+            <p>Now playing:</p>
+            <PlayableItemCard item={nowPlaying.item} progress={nowPlaying.progress}/>
+        </div>
+        <div className="my-3 border-bottom border-light"/>
+        <div className="d-flex flex-row flex-grow-1">
+            {Object.entries(queues)
+                .filter(([, queue]) => queue.items.length > 0)
+                .sort(Comparators.comparing(([, q]) => q.items[0].submissionTime, Comparators.NUMBER))
+                .map(([key, queue]) => {
+                return <UserIdQueue key={key} ownerId={key} items={queue.items}/>;
+            })}
+        </div>
+    </div>;
 };
 
 export default Server;

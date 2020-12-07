@@ -18,48 +18,70 @@
 
 package net.octyl.ourtwobe.datapipe
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.time.delay
 import net.octyl.ourtwobe.util.Event
-import java.util.concurrent.CopyOnWriteArrayList
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
+
+private val KEEP_ALIVE_DURATION = Duration.ofSeconds(5L)
 
 /**
  * Each instance is serving one SSE connection.
  */
 class DataPipe : AutoCloseable {
-    private val messageChannel = MutableSharedFlow<Event>(extraBufferCapacity = 64)
+    private val messageChannel = Channel<Event>(capacity = 64)
     private val closed = AtomicBoolean()
-    private var invokeOnClose = CopyOnWriteArrayList<() -> Unit>()
 
     /**
      * One-time flow that will produce all messages.
      */
-    fun consumeMessages(): Flow<Event> = messageChannel
+    @OptIn(FlowPreview::class)
+    fun consumeMessages(): Flow<Event> = flowOf(
+        keepAliveFlow(),
+        messageChannel.consumeAsFlow()
+    )
+        .flattenMerge(concurrency = 2)
 
-    suspend fun sendData(data: DataPipeEvent) {
-        messageChannel.emit(Event.Data(
-            eventType = data.eventType,
-            data = data,
-        ))
-    }
-
-    override fun close() {
-        if (closed.compareAndSet(false, true)) {
-            runBlocking {
-                messageChannel.emit(Event.Close)
-            }
-            invokeOnClose.forEach {
-                it()
+    private fun keepAliveFlow(): Flow<Event> {
+        return flow {
+            while (currentCoroutineContext().isActive) {
+                // Send KA event with 2x duration, so we have a decent buffer
+                emit(serializeEvent(DataPipeEvent.KeepAlive(
+                    Instant.now().plus(KEEP_ALIVE_DURATION.multipliedBy(2))
+                )))
+                delay(KEEP_ALIVE_DURATION)
             }
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun invokeOnClose(block: () -> Unit) {
-        invokeOnClose.add(block)
+    suspend fun sendData(data: DataPipeEvent) {
+        messageChannel.send(serializeEvent(data))
+    }
+
+    private fun serializeEvent(data: DataPipeEvent) = Event.Data(
+        id = UUID.randomUUID().toString(),
+        eventType = data.eventType,
+        data = data,
+    )
+
+    override fun close() {
+        if (closed.compareAndSet(false, true)) {
+            runBlocking {
+                messageChannel.send(Event.Close)
+            }
+        }
     }
 
 }

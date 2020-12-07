@@ -25,6 +25,7 @@ import {useNonNullContext} from "./hook/useNonNullContext";
 import {Form} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {asNonNull} from "../utils";
+import {usePrevious} from "./hook/usePrevious";
 
 export interface VolumeSliderProps {
     guildId: GuildId
@@ -32,15 +33,21 @@ export interface VolumeSliderProps {
 
 export const VolumeSlider: React.FC<VolumeSliderProps> = ({guildId}) => {
     const volId = useUniqueId("volume");
-    const volume = useSelector((state: LocalState) => state.guildState[guildId]?.volume);
+    const volume = useSelector((state: LocalState) => state.guildState[guildId]?.settings?.volume);
+    const lastVolume = usePrevious(volume);
     const [userVolume, setUserVolume] = useState(volume);
+    const lastUserVolume = usePrevious(userVolume);
     const commApi = useNonNullContext(CommApiContext);
 
     useEffect(() => {
         if (typeof userVolume === "undefined") {
+            // initial state needs to be set
+            setUserVolume(volume);
+        } else if (lastVolume === userVolume && userVolume === lastUserVolume) {
+            // change from server is being propagated to us, accept it
             setUserVolume(volume);
         }
-    }, [userVolume, volume]);
+    }, [userVolume, lastUserVolume, volume, lastVolume]);
 
     const setVolume = useCallback((newVolume: number): void => {
         commApi.updateGuildSettings({

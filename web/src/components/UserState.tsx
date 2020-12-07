@@ -20,11 +20,12 @@ import {faSignInAlt, faSpinner} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {ReactElement} from "react";
 import {generateOAuthLink} from "../discord/auth";
-import {UserInfoRecord, UserProfile} from "../redux/reducer";
+import {UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 import {Nav, NavDropdown} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
+import {getAvatarUrl, getUserNameColor, User} from "../discord/api/response/User";
 
 function loading(): ReactElement {
     return <div className="navbar-text d-inline-flex align-items-center">
@@ -32,12 +33,12 @@ function loading(): ReactElement {
     </div>;
 }
 
-const UserProfileDisplay: React.FC<UserProfile> = (props) => {
+const UserProfileDisplay: React.FC<User> = (props) => {
     return <>
-        <NavbarImg src={props.avatarUrl}
+        <NavbarImg src={getAvatarUrl(props)}
                    alt="Avatar"
                    className="rounded-circle border border-light"/>
-        {props.username}
+        <span style={{color: getUserNameColor(props)}}>{props.username}</span>
     </>;
 };
 

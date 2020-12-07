@@ -34,8 +34,10 @@ import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
 import net.octyl.ourtwobe.api.discorddata.ChannelData
 import net.octyl.ourtwobe.api.discorddata.GuildData
+import net.octyl.ourtwobe.api.discorddata.UserData
 import net.octyl.ourtwobe.api.discorddata.toChannelData
 import net.octyl.ourtwobe.api.discorddata.toGuildData
+import net.octyl.ourtwobe.api.discorddata.toUserData
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.discord.QueuePlayer
 import java.util.concurrent.ConcurrentHashMap
@@ -111,6 +113,13 @@ class GuildManager(
         getVisibleGuild(guildId, viewer)?.let { guild ->
             guild.voiceChannels.map { it.toChannelData() }
         }
+
+    fun getUserData(viewerId: String, userId: String): UserData? =
+        state.keys
+            .asSequence()
+            .mapNotNull { getVisibleGuild(it, viewerId) }
+            .mapNotNull { it.getMemberById(userId) }
+            .firstOrNull()?.user?.toUserData()
 
     fun canSee(guildId: String, viewer: String) = getVisibleGuild(guildId, viewer) != null
 

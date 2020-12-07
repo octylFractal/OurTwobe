@@ -25,20 +25,15 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.WriterContent
 import io.ktor.request.ApplicationReceiveRequest
 import io.ktor.util.pipeline.PipelineContext
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import net.octyl.ourtwobe.util.Event
 import net.octyl.ourtwobe.util.ServerSentEventStream
-import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 
-class ServerSentEventContentConverter(
-    private val config: Configuration
-) : ContentConverter {
+class ServerSentEventContentConverter : ContentConverter {
     override suspend fun convertForReceive(context: PipelineContext<ApplicationReceiveRequest, ApplicationCall>): Any? {
         // This makes literally zero sense
         return null
@@ -51,10 +46,7 @@ class ServerSentEventContentConverter(
         return WriterContent({
             value.use {
                 val stream = ServerSentEventStream(this)
-                coroutineScope {
-                    launch { stream.sendKeepAliveForever(config.keepAliveInterval) }
-                    value.flow.cancellable().collect(stream::sendEvent)
-                }
+                value.flow.cancellable().collect(stream::sendEvent)
             }
         }, contentType)
     }
@@ -89,13 +81,8 @@ class EventFlow(
     }
 }
 
-class Configuration {
-    var keepAliveInterval: Duration = Duration.ofSeconds(30L)
-}
-
 fun ContentNegotiation.Configuration.serverSentEvents(
     contentType: ContentType = ContentType.Text.EventStream,
-    block: Configuration.() -> Unit = {}) {
-    val config = Configuration().also(block)
-    register(contentType, ServerSentEventContentConverter(config))
+) {
+    register(contentType, ServerSentEventContentConverter())
 }

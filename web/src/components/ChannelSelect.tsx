@@ -37,7 +37,7 @@ const NONE = "!!";
 
 export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels}) => {
     const channelControlId = useUniqueId("channel");
-    const selectedChannel = useSelector((state: LocalState) => state.guildState[guildId]?.activeChannel);
+    const selectedChannel = useSelector((state: LocalState) => state.guildState[guildId]?.settings?.activeChannel);
     const commApi = useNonNullContext(CommApiContext);
 
     function setSelectedChannel(channel: ChannelId | undefined): void {

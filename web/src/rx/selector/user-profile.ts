@@ -19,12 +19,12 @@
 import {observeStore} from "../redux-observable";
 import {createSimpleSelector} from "../../redux/selectors";
 import {concatMap} from "rxjs/operators";
-import {userInfo} from "../../redux/reducer";
+import {userInfo, userToken} from "../../redux/reducer";
 import {logErrorAndRetry} from "../observer";
-import {User} from "../../discord/api/response/User";
 import {DiscordApi} from "../../discord/api";
 import {LocalState} from "../../redux/store";
 import {Store} from "redux";
+import {AxiosError} from "axios";
 
 export function subscribe(store: Store<LocalState>): void {
     observeStore(store, createSimpleSelector(state => state.userToken))
@@ -34,22 +34,20 @@ export function subscribe(store: Store<LocalState>): void {
                     store.dispatch(userInfo.clearProfile());
                     return;
                 }
-                const user = await new DiscordApi(token).getMe();
-                store.dispatch(userInfo.loadProfile({
-                    id: user.id,
-                    username: user.username,
-                    avatarUrl: getAvatarUrl(user),
-                }));
+                try {
+                    const user = await new DiscordApi(token).getMe();
+                    store.dispatch(userInfo.loadProfile(user));
+                } catch (e) {
+                    const axios = e as AxiosError;
+                    if ("response" in axios && axios.response?.status === 401) {
+                        // we need a new token
+                        store.dispatch(userToken.logout());
+                        return;
+                    }
+                    throw e;
+                }
             }),
             logErrorAndRetry("user token"),
         )
         .subscribe();
-}
-
-function getAvatarUrl(user: User): string {
-    if (user.avatar) {
-        const ext = user.avatar.startsWith("a_") ? "gif" : "png";
-        return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}`;
-    }
-    return `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
 }

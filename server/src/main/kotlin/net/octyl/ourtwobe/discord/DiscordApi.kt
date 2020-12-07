@@ -31,7 +31,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import net.octyl.ourtwobe.MODULES
 
-private const val DISCORD_BASE_URL = "https://discord.com/api/v6"
+private const val DISCORD_BASE_URL = "https://discord.com/api/v8"
 
 class DiscordApi {
     private val client = HttpClient(OkHttp) {

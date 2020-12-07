@@ -20,6 +20,7 @@ package net.octyl.ourtwobe.datapipe
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.base.CaseFormat
+import java.time.Instant
 
 sealed class DataPipeEvent {
     @JsonIgnore
@@ -38,5 +39,20 @@ sealed class DataPipeEvent {
     data class ProgressItem(
         val item: PlayableItem,
         val progress: Double,
+    ) : DataPipeEvent()
+
+    /**
+     * Clear all queues that are on the client.
+     */
+    object ClearQueues : DataPipeEvent()
+
+    /**
+     * Keep-alive signal.
+     *
+     * @param expectNextAt expect another one by this time, otherwise connection has died and should be
+     *                      re-established
+     */
+    data class KeepAlive(
+        val expectNextAt: Instant
     ) : DataPipeEvent()
 }

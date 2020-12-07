@@ -12,6 +12,7 @@ import {tap} from "rxjs/operators";
 import {exhaustiveCheck} from "../../utils";
 import {Dispatch} from "redux";
 import {guildState} from "../../redux/reducer";
+import {AxiosError} from "axios";
 
 interface RealServerContextProps {
     guildId: GuildId
@@ -22,7 +23,18 @@ const RealServerContext: React.FC<RealServerContextProps> = ({guildId, token, ch
     const commApi = useMemo(() => new OurTwobeCommApi(token, guildId), [token, guildId]);
     const dispatch = useDispatch();
     useEffect(() => {
-        const reAuth = () => commApi.authenticate();
+        const reAuth = async (): Promise<void> => {
+            try {
+                await commApi.authenticate();
+            } catch (e) {
+                const axios = e as AxiosError;
+                if ("response" in axios && axios.response?.status === 401) {
+                    // new discord token needed? refresh the page to figure it out
+                    window.location.reload();
+                }
+                throw e;
+            }
+        };
         const subscription = newDataPipe(guildId, reAuth).observable.pipe(
             tap(subscribeToEventsFunc(guildId, reAuth, dispatch))
         ).subscribe();
@@ -48,12 +60,16 @@ function subscribeToEventsFunc(guildId: string, authenticate: () => Promise<void
         }
         switch (e.type) {
             case "guildSettings":
-                dispatch(guildState.updateState({...e, guildId}));
+                dispatch(guildState.updateSettings({...e, guildId}));
                 break;
             case "progressItem":
-                console.log(e.item, e.progress);
+                dispatch(guildState.updatePlayingItem({...e, guildId}));
                 break;
             case "queueItem":
+                dispatch(guildState.addQueuedItem({...e, guildId}));
+                break;
+            case "clearQueues":
+                dispatch(guildState.clearQueues({guildId}));
                 break;
             default:
                 exhaustiveCheck(e);
@@ -69,9 +85,6 @@ function subscribeToEventsFunc(guildId: string, authenticate: () => Promise<void
 const ServerContext: React.FC = ({children}) => {
     const {guildId} = useParams<{ guildId: string }>();
     const token = useSelector((state: LocalState) => state.userToken);
-    if (typeof guildId === "undefined") {
-        return <></>;
-    }
     if (!token) {
         // Dump them back in the log in page
         return <Redirect to="/"/>;

@@ -73,6 +73,10 @@ export class DiscordApi extends ApiBase {
         return this.rateLimitedGet(`/users/@me`, "discord");
     }
 
+    getUser(userId: string): Promise<User> {
+        return this.rateLimitedGet<User>(`/users/${userId}`, "ourtwobe");
+    }
+
     getGuilds(): Promise<Guild[]> {
         return this.rateLimitedGet<Guild[]>(`/guilds`, "ourtwobe");
     }

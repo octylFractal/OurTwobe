@@ -18,7 +18,13 @@
 
 package net.octyl.ourtwobe.youtube.audio
 
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.writer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +34,7 @@ import kotlinx.coroutines.flow.retry
 import mu.KotlinLogging
 import net.octyl.ourtwobe.ffmpeg.AvioCallbacks
 import net.octyl.ourtwobe.ffmpeg.FFmpegOpusReencoder
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
 
@@ -39,12 +46,18 @@ object YouTubeOpusAudioBufferSource {
     fun provideAudio(id: String, volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return flow {
             YouTubeDlProcessBinding(id).use { ytdl ->
-                val channel = Channels.newChannel(ytdl.process.inputStream)
-                FFmpegOpusReencoder(
-                    id,
-                    AvioCallbacks.forChannel(channel)
-                ).use {
-                    emitAll(it.recode(volumeStateFlow))
+                coroutineScope {
+                    Channels.newChannel(
+                        // Buffer up to 16MB of data, since we don't want to delay downloading for any reason
+                        hotBuffer(ytdl.process.inputStream, 16 * 1_048_576)
+                    ).use { channel ->
+                        FFmpegOpusReencoder(
+                            id,
+                            AvioCallbacks.forChannel(channel)
+                        ).use {
+                            emitAll(it.recode(volumeStateFlow))
+                        }
+                    }
                 }
             }
         }
@@ -55,4 +68,23 @@ object YouTubeOpusAudioBufferSource {
             }
     }
 
+}
+
+/**
+ * Eagerly pulls new buffers, up to [bufferSize], from [stream] and makes them available.
+ *
+ * This is different from a [java.io.BufferedInputStream] which may not even fill the buffer.
+ */
+private fun CoroutineScope.hotBuffer(stream: InputStream, bufferSize: Int): InputStream {
+    val writer = writer(Dispatchers.IO) {
+        val buffer = ByteArray(bufferSize)
+        while (true) {
+            val read = stream.readNBytes(buffer, 0, buffer.size)
+            if (read == 0) {
+                break
+            }
+            channel.writeFully(buffer, 0, read)
+        }
+    }
+    return writer.channel.toInputStream(parent = this.coroutineContext[Job])
 }
