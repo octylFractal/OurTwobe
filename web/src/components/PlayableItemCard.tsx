@@ -1,6 +1,8 @@
-import {Card, ProgressBar} from "react-bootstrap";
+import {Button, Card, ProgressBar} from "react-bootstrap";
 import React from "react";
-import {PlayableItem} from "../server/api/data-pipe";
+import {NO_PLAYING_ITEM, PlayableItem} from "../server/api/data-pipe";
+import {useNonNullContext} from "./hook/useNonNullContext";
+import {CommApiContext} from "./CommApiContext";
 
 export interface PlayableItemCardProps {
     item: PlayableItem
@@ -8,6 +10,14 @@ export interface PlayableItemCardProps {
 }
 
 export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progress}) => {
+    const commApi = useNonNullContext(CommApiContext);
+
+    const controlsDisabled = item.id === NO_PLAYING_ITEM.item.id;
+
+    const controlRemove = typeof progress === "undefined"
+        ? {label: "Remove", action: () => void commApi.removeItem({itemId: item.id})}
+        : {label: "Skip", action: () => void commApi.skipItem({itemId: item.id})};
+
     return <Card className="align-items-center">
         <Card.Img variant="top"
                   className="border border-black box-sizing-content-box"
@@ -29,6 +39,15 @@ export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progres
         }
         <Card.Body style={{maxWidth: item.thumbnail.width}}>
             <Card.Text className="text-center">{item.title}<br/>({item.youtubeId})</Card.Text>
+        </Card.Body>
+        <Card.Body className="p-0 w-100">
+            <Button
+                className="p-0 w-100 rounded-0"
+                variant={controlsDisabled ? "dark" : "danger"}
+                disabled={controlsDisabled}
+                onClick={controlRemove.action}>
+                {controlRemove.label}
+            </Button>
         </Card.Body>
     </Card>;
 };

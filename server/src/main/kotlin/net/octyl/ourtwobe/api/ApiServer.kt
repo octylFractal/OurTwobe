@@ -43,6 +43,7 @@ import io.ktor.request.path
 import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
+import io.ktor.routing.delete
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.put
@@ -64,6 +65,7 @@ import net.octyl.ourtwobe.datapipe.GuildManager
 import net.octyl.ourtwobe.datapipe.GuildSettings
 import net.octyl.ourtwobe.datapipe.GuildState
 import net.octyl.ourtwobe.discord.DiscordApi
+import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
 import org.slf4j.event.Level
 import java.time.Duration
@@ -173,8 +175,7 @@ fun Application.module(
                 }
             }
             get("/guilds/{guildId}/data-pipe") {
-                val (userId) = call.requireSession()
-                val (guildId, state) = call.getGuildState()
+                val (_, state) = call.getGuildState()
 
                 call.response.header(HttpHeaders.CacheControl, "no-cache")
 
@@ -206,24 +207,24 @@ fun Application.module(
             route("/discord") {
                 route("/guilds") {
                     get {
-                        val (userId) = call.requireSession()
+                        val userId = extractUserId(call)
                         call.respond(guildManager.getGuildDatas(userId))
                     }
                     route("/{guildId}") {
                         get {
-                            val (userId) = call.requireSession()
+                            val userId = extractUserId(call)
                             val guildId = call.parameters["guildId"]!!
                             call.respond(guildManager.getGuildData(guildId, userId) ?: guildNotFoundError(guildId))
                         }
                         get("/channels") {
-                            val (userId) = call.requireSession()
+                            val userId = extractUserId(call)
                             val guildId = call.parameters["guildId"]!!
                             call.respond(guildManager.getChannelDatas(guildId, userId) ?: guildNotFoundError(guildId))
                         }
                     }
                 }
                 get("/users/{userId}") {
-                    val (viewerId) = call.requireSession()
+                    val viewerId = extractUserId(call)
                     val userId = call.parameters["userId"]!!
                     call.respond(guildManager.getUserData(viewerId, userId) ?: userNotFoundError(userId))
                 }
@@ -231,7 +232,7 @@ fun Application.module(
 
             route("/guilds/{guildId}") {
                 put {
-                    val (userId) = call.requireSession()
+                    val userId = extractUserId(call)
                     val body = call.receive<GuildUpdate>()
                     val (guildId, state) = call.getGuildState()
                     body.activeChannel?.value?.let {
@@ -253,16 +254,35 @@ fun Application.module(
                     }
                     call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
                 }
-                post("/queue") {
-                    val userId = extractUserId(call)
-                    val body = call.receive<QueueSubmit>()
+                post("/skip") {
+                    val body = call.receive<ItemSkip>()
                     val (_, state) = call.getGuildState()
 
-                    youTubeItemResolver.resolveItems(body.url).collect {
-                        logger.info { "$userId queued ${it.title}" }
-                        state.queueManager.insert(userId, it)
-                    }
+                    state.queuePlayer.sendCommand(PlayerCommand.Skip(body.itemId))
+
                     call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
+                }
+                route("/queue") {
+                    post {
+                        val userId = extractUserId(call)
+                        val body = call.receive<QueueSubmit>()
+                        val (_, state) = call.getGuildState()
+
+                        youTubeItemResolver.resolveItems(body.url).collect {
+                            logger.info { "$userId queued ${it.title}" }
+                            state.queueManager.insert(userId, it)
+                        }
+                        call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
+                    }
+                    delete {
+                        val userId = extractUserId(call)
+                        val body = call.receive<ItemRemove>()
+                        val (_, state) = call.getGuildState()
+
+                        state.queueManager.removeById(userId, authorization, body.itemId)
+
+                        call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
+                    }
                 }
             }
         }

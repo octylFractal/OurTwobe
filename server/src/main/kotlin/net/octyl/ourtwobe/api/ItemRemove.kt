@@ -16,13 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package net.octyl.ourtwobe.discord
+package net.octyl.ourtwobe.api
 
-import net.octyl.ourtwobe.api.Authorization
-
-class DiscordIdAuthorization(
-    private val owner: String,
-) : Authorization {
-    override fun isAdmin(user: String) = owner == user
-    override fun canRemoveFrom(user: String, queueOwner: String) = isAdmin(user) || user == queueOwner
-}
+data class ItemRemove(
+    val itemId: String,
+)

@@ -36,6 +36,11 @@ sealed class DataPipeEvent {
         val item: PlayableItem,
     ) : DataPipeEvent()
 
+    data class RemoveItem(
+        val owner: String,
+        val itemId: String,
+    ) : DataPipeEvent()
+
     data class ProgressItem(
         val item: PlayableItem,
         val progress: Double,

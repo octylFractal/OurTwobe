@@ -36,16 +36,24 @@ export class OurTwobeCommApi extends ApiBase {
         });
     }
 
-    async authenticate(): Promise<void> {
+    authenticate(): Promise<void> {
         return this.doRequest("get", "/authenticate", {});
     }
 
-    async updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
+    updateGuildSettings(guildUpdate: GuildUpdate): Promise<void> {
         return this.doRequest("put", `/guilds/${this.guildId}`, {data: guildUpdate});
     }
 
-    async submitItem(item: QueueSubmit): Promise<void> {
+    submitItem(item: QueueSubmit): Promise<void> {
         return this.doRequest("post", `/guilds/${this.guildId}/queue`, {data: item});
+    }
+
+    removeItem(request: ItemRemove): Promise<void> {
+        return this.doRequest("delete", `/guilds/${this.guildId}/queue`, {data: request});
+    }
+
+    skipItem(request: ItemSkip): Promise<void> {
+        return this.doRequest("post", `/guilds/${this.guildId}/skip`, {data: request});
     }
 }
 
@@ -64,4 +72,12 @@ export interface GuildUpdate {
 
 export interface QueueSubmit {
     url: string
+}
+
+export interface ItemRemove {
+    itemId: string
+}
+
+export interface ItemSkip {
+    itemId: string
 }

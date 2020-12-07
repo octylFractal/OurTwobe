@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.discord.audio
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -31,10 +32,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
 import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.PlayableItem
+import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
@@ -43,18 +47,25 @@ class QueueSendHandler(
     guildId: String,
 ) : AudioSendHandler {
     private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
+
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
     private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(40L) / 20L).toInt())
 
     @OptIn(FlowPreview::class)
-    fun play(playableItems: Flow<PlayableItem>, volumeStateFlow: StateFlow<Double>): Flow<DataPipeEvent.ProgressItem> {
+    fun play(
+        playableItems: Flow<PlayableItem>,
+        cancelFlow: Flow<PlayerCommand.Skip>,
+        volumeStateFlow: StateFlow<Double>
+    ): Flow<DataPipeEvent.ProgressItem> {
         return flow {
             coroutineScope {
                 // Prepare hot flows so the audio is ready ASAP
                 playableItems.collect {
-                    emit(it to YouTubeOpusAudioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
-                        .produceIn(this).consumeAsFlow())
+                    emit(
+                        it to YouTubeOpusAudioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
+                            .produceIn(this).consumeAsFlow()
+                    )
                 }
             }
         }
@@ -68,7 +79,27 @@ class QueueSendHandler(
                     val totalMillis = playableItem.duration.toMillis()
                     var millis = 0L
                     var lastPercent = 0.0
-                    audioFlow.collect {
+                    coroutineScope {
+                        val finished = Semaphore(1, acquiredPermits = 1)
+                        launch {
+                            // await cancellation token
+                            for (item in cancelFlow.produceIn(this)) {
+                                if (finished.tryAcquire()) {
+                                    // the song is over, kill this coroutine
+                                    return@launch
+                                }
+                                if (item.itemId == playableItem.id) {
+                                    break
+                                }
+                            }
+                            // cancel the song
+                            finished.release()
+                        }
+                        audioFlow.collect {
+                            if (finished.tryAcquire()) {
+                                // the song is over, kill this coroutine
+                                throw PurposefulCancellationException()
+                            }
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
                             if (percent - lastPercent > 0.1) {
@@ -81,6 +112,11 @@ class QueueSendHandler(
                             }
                             emit(base to it)
                         }
+                        finished.release()
+                    }
+                } catch (e: PurposefulCancellationException) {
+                    // no big deal
+                    logger.info("Skipped '${playableItem.title}' (${playableItem.youtubeId})")
                 } finally {
                     emit(base.copy(progress = 100.0) to null)
                     logger.info("Finished '${playableItem.title}' (${playableItem.youtubeId})")
@@ -104,3 +140,5 @@ class QueueSendHandler(
     override fun isOpus() = true
 
 }
+
+private class PurposefulCancellationException : CancellationException()

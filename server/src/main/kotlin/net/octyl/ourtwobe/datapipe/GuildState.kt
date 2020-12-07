@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import net.octyl.ourtwobe.discord.QueuePlayer
 
 class GuildState(
-    private val queuePlayer: QueuePlayer,
+    val queuePlayer: QueuePlayer,
     val queueManager: QueueManager,
     val guildSettingsHolder: GuildSettingsHolder,
 ) {

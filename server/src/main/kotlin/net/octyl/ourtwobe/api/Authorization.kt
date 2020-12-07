@@ -32,6 +32,7 @@ import io.ktor.util.KtorExperimentalAPI
 
 interface Authorization {
     fun isAdmin(user: String): Boolean
+    fun canRemoveFrom(user: String, queueOwner: String): Boolean
 }
 
 /**
@@ -49,7 +50,7 @@ fun Route.requireAdmin(
         if (!authorization.isAdmin(userIdExtractor(call))) {
             throw ApiErrorException(
                 ApiError("user.not.admin", "You are not an admin of OurTwobe."),
-                HttpStatusCode.Unauthorized
+                HttpStatusCode.Forbidden
             )
         }
         proceed()

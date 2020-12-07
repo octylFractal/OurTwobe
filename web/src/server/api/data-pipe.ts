@@ -20,6 +20,7 @@ import {Observable, of} from "rxjs";
 import {oKeys, runBlock, Writeable} from "../../utils";
 import {exhaustMap, map, retryWhen, tap} from "rxjs/operators";
 import {logErrorAndRetry} from "../../rx/observer";
+import {ChannelId, UserId} from "../../data/DiscordIds";
 
 export interface DataPipeError {
     error: true
@@ -29,13 +30,19 @@ export interface DataPipeError {
 export interface GuildSettings {
     readonly type: 'guildSettings'
     readonly volume: number
-    readonly activeChannel: string | null
+    readonly activeChannel: ChannelId | null
 }
 
 export interface QueueItem {
     readonly type: 'queueItem'
-    readonly owner: string
+    readonly owner: UserId
     readonly item: PlayableItem
+}
+
+export interface RemoveItem {
+    readonly type: 'removeItem'
+    readonly owner: UserId
+    readonly itemId: string
 }
 
 export interface ProgressItem {
@@ -71,13 +78,14 @@ interface KeepAlive {
     readonly expectNextAt: number
 }
 
-export type DataPipeEvent = GuildSettings | QueueItem | ProgressItem | ClearQueues;
+export type DataPipeEvent = GuildSettings | QueueItem | RemoveItem | ProgressItem | ClearQueues;
 
 const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
     // Force an object with all types present
     const obj: {[T in DataPipeEvent["type"]]: true} = {
         guildSettings: true,
         queueItem: true,
+        removeItem: true,
         progressItem: true,
         clearQueues: true,
     };

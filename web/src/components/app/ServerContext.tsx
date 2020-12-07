@@ -65,6 +65,9 @@ function subscribeToEventsFunc(guildId: string, authenticate: () => Promise<void
             case "progressItem":
                 dispatch(guildState.updatePlayingItem({...e, guildId}));
                 break;
+            case "removeItem":
+                dispatch(guildState.removeQueuedItem({...e, guildId}));
+                break;
             case "queueItem":
                 dispatch(guildState.addQueuedItem({...e, guildId}));
                 break;

@@ -107,7 +107,7 @@ class NanoSendSystem(
                 base = spinDeadline
             }
         }
-            .flowOn(Dispatchers.Default)
+            .flowOn(Dispatchers.IO)
             .buffer()
         scope.launch(CoroutineName("${packetProvider.identifier} Socket")) {
             var sentPacket = true

@@ -19,6 +19,7 @@
 package net.octyl.ourtwobe.datapipe
 
 import com.google.common.collect.Multimaps
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ProducerScope
@@ -28,6 +29,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.selects.select
+import net.octyl.ourtwobe.api.ApiError
+import net.octyl.ourtwobe.api.ApiErrorException
+import net.octyl.ourtwobe.api.Authorization
 import net.octyl.ourtwobe.util.RWLock
 import net.octyl.ourtwobe.util.read
 import net.octyl.ourtwobe.util.write
@@ -39,8 +43,8 @@ class QueueManager {
     private val queues = Multimaps.newSortedSetMultimap<String, PlayableItem>(HashMap()) {
         TreeSet(Comparator.comparing { it.submissionTime })
     }
-    private val _events = MutableSharedFlow<DataPipeEvent.QueueItem>(extraBufferCapacity = 16)
-    val events: SharedFlow<DataPipeEvent.QueueItem> = _events
+    private val _events = MutableSharedFlow<DataPipeEvent>(extraBufferCapacity = 16)
+    val events: SharedFlow<DataPipeEvent> = _events
 
     private val awaitingNewItem = mutableListOf<CompletableDeferred<Unit>>()
 
@@ -60,6 +64,22 @@ class QueueManager {
         rwLock.read {
             return Multimaps.asMap(queues).mapValues {
                 it.value.toList()
+            }
+        }
+    }
+
+    suspend fun removeById(user: String, authorization: Authorization, itemId: String) {
+        rwLock.write {
+            // This might need to be optimized in the future
+            queues.entries().singleOrNull { it.value.id == itemId }?.let { entry ->
+                if (!authorization.canRemoveFrom(user, entry.key)) {
+                    throw ApiErrorException(
+                        ApiError("queue.remove.forbidden", "You can't remove from that queue"),
+                        HttpStatusCode.Forbidden
+                    )
+                }
+                queues.remove(entry.key, entry.value)
+                _events.emit(DataPipeEvent.RemoveItem(entry.key, entry.value.id))
             }
         }
     }
@@ -88,7 +108,7 @@ class QueueManager {
                         deferred.cancel()
                         owners = it
                     }
-                    deferred.onAwait { Unit }
+                    deferred.onAwait { }
                 }
                 // then loop!
             }

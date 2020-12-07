@@ -24,6 +24,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
@@ -99,6 +101,7 @@ class QueuePlayer(
             val audioManager = guild.audioManager
             audioManager.setSpeakingMode(SpeakingMode.SOUNDSHARE)
             audioManager.sendingHandler = sendHandler
+            val cancelFlow = MutableSharedFlow<PlayerCommand.Skip>()
             for (command in messaging) {
                 try {
                     exhaustive(when (command) {
@@ -106,7 +109,7 @@ class QueuePlayer(
                             val channel = guild.getVoiceChannelById(command.channel)
                                 ?: error("Unknown channel: ${command.channel}")
                             logger.info("Joining channel '${channel.name}' (${channel.id})")
-                            queueDrainJob = launch { drainQueue(channel, volumeStateFlow) }
+                            queueDrainJob = launch { drainQueue(channel, cancelFlow, volumeStateFlow) }
                             audioManager.openAudioConnection(channel)
                         }
                         is PlayerCommand.Disconnect -> {
@@ -117,6 +120,9 @@ class QueuePlayer(
                                 _events.value = it.copy(progress = 100.0)
                             }
                         }
+                        is PlayerCommand.Skip -> {
+                            cancelFlow.emit(command)
+                        }
                     })
                 } catch (e: Exception) {
                     logger.warn(e) { "Error processing command $command" }
@@ -125,19 +131,23 @@ class QueuePlayer(
         }
     }
 
-    private suspend fun drainQueue(channel: VoiceChannel, volumeStateFlow: StateFlow<Double>) {
+    private suspend fun drainQueue(
+        channel: VoiceChannel,
+        cancelFlow: Flow<PlayerCommand.Skip>,
+        volumeStateFlow: StateFlow<Double>
+    ) {
         val itemFlow = flow {
             while (coroutineContext.isActive) {
                 val nextItem = removeNextItem(channel)
                 logger.info("Preparing '${nextItem.title}' (${nextItem.youtubeId})")
                 try {
-                    emit(nextItem)
+                        emit(nextItem)
                 } catch (e: Throwable) {
                     logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.youtubeId})" }
                 }
             }
         }
-        sendHandler.play(itemFlow, volumeStateFlow).collect {
+        sendHandler.play(itemFlow, cancelFlow, volumeStateFlow).collect {
             _events.value = it
         }
     }
@@ -181,4 +191,6 @@ sealed class PlayerCommand {
      * This will cancel the currently playing song.
      */
     object Disconnect : PlayerCommand()
+
+    data class Skip(val itemId: String) : PlayerCommand()
 }
