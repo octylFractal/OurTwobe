@@ -18,14 +18,20 @@
 
 package net.octyl.ourtwobe.discord.audio
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
+import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.PlayableItem
@@ -33,22 +39,36 @@ import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
-class QueueSendHandler : AudioSendHandler {
+class QueueSendHandler(
+    guildId: String,
+) : AudioSendHandler {
+    private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
     private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(40L) / 20L).toInt())
 
+    @OptIn(FlowPreview::class)
     fun play(playableItems: Flow<PlayableItem>, volumeStateFlow: StateFlow<Double>): Flow<DataPipeEvent.ProgressItem> {
-        return playableItems
-            .transform { playableItem ->
+        return flow {
+            coroutineScope {
+                // Prepare hot flows so the audio is ready ASAP
+                playableItems.collect {
+                    emit(it to YouTubeOpusAudioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
+                        .produceIn(this).consumeAsFlow())
+                }
+            }
+        }
+            // only keep 1 song ready
+            .buffer(Channel.RENDEZVOUS)
+            .transform { (playableItem, audioFlow) ->
+                logger.info("Playing '${playableItem.title}' (${playableItem.youtubeId})")
                 var base = DataPipeEvent.ProgressItem(playableItem, 0.0)
                 try {
                     // number of milliseconds needed for an 0.01% increase
                     val totalMillis = playableItem.duration.toMillis()
                     var millis = 0L
                     var lastPercent = 0.0
-                    YouTubeOpusAudioBufferSource.provideAudio(playableItem.youtubeId, volumeStateFlow)
-                        .collect {
+                    audioFlow.collect {
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
                             if (percent - lastPercent > 0.1) {
@@ -63,6 +83,7 @@ class QueueSendHandler : AudioSendHandler {
                         }
                 } finally {
                     emit(base.copy(progress = 100.0) to null)
+                    logger.info("Finished '${playableItem.title}' (${playableItem.youtubeId})")
                 }
             }
             // store 0.5s worth of audio in queue

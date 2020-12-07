@@ -59,7 +59,7 @@ class QueuePlayer(
     private val _events = MutableStateFlow<DataPipeEvent.ProgressItem?>(null)
     val events: StateFlow<DataPipeEvent.ProgressItem?> = _events
 
-    private val sendHandler = QueueSendHandler()
+    private val sendHandler = QueueSendHandler(guildId)
 
     init {
         jda.addEventListener(object {
@@ -129,7 +129,7 @@ class QueuePlayer(
         val itemFlow = flow {
             while (coroutineContext.isActive) {
                 val nextItem = removeNextItem(channel)
-                logger.info("Playing '${nextItem.title}' (${nextItem.youtubeId})")
+                logger.info("Preparing '${nextItem.title}' (${nextItem.youtubeId})")
                 try {
                     emit(nextItem)
                 } catch (e: Throwable) {
