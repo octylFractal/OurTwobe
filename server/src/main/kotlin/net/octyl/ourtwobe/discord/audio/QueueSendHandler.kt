@@ -33,7 +33,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
 import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
@@ -80,28 +81,35 @@ class QueueSendHandler(
                     var millis = 0L
                     var lastPercent = 0.0
                     coroutineScope {
-                        val finished = Semaphore(1, acquiredPermits = 1)
+                        val finished = Mutex(locked = true)
                         launch {
                             // await cancellation token
                             val cancelChannel = cancelFlow.produceIn(this)
                             try {
-                                for (item in cancelChannel) {
-                                    if (finished.tryAcquire()) {
-                                        // the song is over, kill this coroutine
-                                        return@launch
+                                while (true) {
+                                    // select returns Boolean?
+                                    // true -> cancel, false -> loop, null -> return
+                                    val res = select<Boolean?> {
+                                        cancelChannel.onReceive {
+                                            it.itemId == playableItem.id
+                                        }
+                                        finished.onLock {
+                                            null
+                                        }
                                     }
-                                    if (item.itemId == playableItem.id) {
-                                        break
+                                    when(res) {
+                                        true -> break
+                                        null -> return@launch
                                     }
                                 }
                                 // cancel the song
-                                finished.release()
+                                finished.unlock()
                             } finally {
                                 cancelChannel.cancel()
                             }
                         }
                         audioFlow.collect {
-                            if (finished.tryAcquire()) {
+                            if (finished.tryLock()) {
                                 // the song is over, kill this coroutine
                                 throw PurposefulCancellationException()
                             }
@@ -117,7 +125,7 @@ class QueueSendHandler(
                             }
                             emit(base to it)
                         }
-                        finished.release()
+                        finished.unlock()
                     }
                 } catch (e: PurposefulCancellationException) {
                     // no big deal
