@@ -37,15 +37,18 @@ import net.octyl.ourtwobe.ffmpeg.FFmpegOpusReencoder
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
+import java.nio.file.Path
 
-object YouTubeOpusAudioBufferSource {
+class YouTubeOpusAudioBufferSource(
+    private val cookiesPath: Path?
+) {
 
     private val logger = KotlinLogging.logger { }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun provideAudio(id: String, volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return flow {
-            YouTubeDlProcessBinding(id).use { ytdl ->
+            YouTubeDlProcessBinding(cookiesPath, id).use { ytdl ->
                 coroutineScope {
                     Channels.newChannel(
                         // Buffer up to 16MB of data, since we don't want to delay downloading for any reason

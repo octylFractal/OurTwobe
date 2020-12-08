@@ -30,14 +30,21 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import mu.KotlinLogging
+import java.nio.file.Path
 
 private val BASE_COMMAND = listOf("youtube-dl", "--force-ipv4", "-q", "-o", "-", "-f", "bestaudio,best")
 
-class YouTubeDlProcessBinding(id: String) : AutoCloseable {
+class YouTubeDlProcessBinding(cookiesPath: Path?, id: String) : AutoCloseable {
     private val logger = KotlinLogging.logger { }
     private val errorJob: Job
     val process =
-        ProcessBuilder(BASE_COMMAND + "https://youtu.be/$id")
+        ProcessBuilder(BASE_COMMAND + ArrayList<String>().apply {
+            cookiesPath?.let {
+                add("--cookies")
+                add(it.toAbsolutePath().toString())
+            }
+            add("https://youtu.be/$id")
+        } )
             .start()!!
             .also { process ->
                 // don't need to listen to that

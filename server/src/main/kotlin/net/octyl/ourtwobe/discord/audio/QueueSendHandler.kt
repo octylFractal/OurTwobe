@@ -42,12 +42,16 @@ import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 class QueueSendHandler(
+    cookiesPath: Path?,
     guildId: String,
 ) : AudioSendHandler {
     private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
+
+    private val audioBufferSource = YouTubeOpusAudioBufferSource(cookiesPath)
 
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
@@ -64,7 +68,7 @@ class QueueSendHandler(
                 // Prepare hot flows so the audio is ready ASAP
                 playableItems.collect {
                     emit(
-                        it to YouTubeOpusAudioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
+                        it to audioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
                             .produceIn(this).consumeAsFlow()
                     )
                 }

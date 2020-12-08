@@ -40,9 +40,11 @@ import net.octyl.ourtwobe.api.discorddata.toGuildData
 import net.octyl.ourtwobe.api.discorddata.toUserData
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.discord.QueuePlayer
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 class GuildManager(
+    private val cookiesPath: Path?,
     private val jda: JDA,
 ) {
     private val queueScope = CoroutineScope(CoroutineName("QueuePlayer") + Dispatchers.Default)
@@ -53,7 +55,7 @@ class GuildManager(
             guild.audioManager.closeAudioConnection()
             val guildSettingsHolder = GuildSettingsHolder()
             val queueManager = QueueManager()
-            val queuePlayer = QueuePlayer(guildId, jda, queueManager, guildSettingsHolder)
+            val queuePlayer = QueuePlayer(cookiesPath, guildId, jda, queueManager, guildSettingsHolder)
             queueScope.launch {
                 queuePlayer.play(
                     guildSettingsHolder.settings

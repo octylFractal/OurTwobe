@@ -33,6 +33,7 @@ data class Config(
     )
     data class YouTube(
         val token: String,
+        val cookies: Path?,
     )
 }
 

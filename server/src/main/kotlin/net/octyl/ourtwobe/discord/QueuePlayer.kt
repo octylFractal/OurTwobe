@@ -48,9 +48,11 @@ import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.datapipe.QueueManager
 import net.octyl.ourtwobe.discord.audio.QueueSendHandler
 import net.octyl.ourtwobe.util.exhaustive
+import java.nio.file.Path
 import kotlin.coroutines.coroutineContext
 
 class QueuePlayer(
+    cookiesPath: Path?,
     private val guildId: String,
     private val jda: JDA,
     private val queueManager: QueueManager,
@@ -61,7 +63,7 @@ class QueuePlayer(
     private val _events = MutableStateFlow<DataPipeEvent.ProgressItem?>(null)
     val events: StateFlow<DataPipeEvent.ProgressItem?> = _events
 
-    private val sendHandler = QueueSendHandler(guildId)
+    private val sendHandler = QueueSendHandler(cookiesPath, guildId)
 
     init {
         jda.addEventListener(object {
