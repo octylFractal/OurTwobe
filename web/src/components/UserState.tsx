@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {faSignInAlt, faSpinner} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {ReactElement} from "react";
 import {generateOAuthLink} from "../discord/auth";
@@ -26,6 +25,8 @@ import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 import {Nav, NavDropdown} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {getAvatarUrl, getUserNameColor, User} from "../discord/api/response/User";
+import {faSpinner} from "@fortawesome/free-solid-svg-icons/faSpinner";
+import {faSignInAlt} from "@fortawesome/free-solid-svg-icons/faSignInAlt";
 
 function loading(): ReactElement {
     return <div className="navbar-text d-inline-flex align-items-center">

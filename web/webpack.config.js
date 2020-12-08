@@ -10,7 +10,6 @@ const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
-const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const {TsconfigPathsPlugin} = require('tsconfig-paths-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
@@ -25,17 +24,13 @@ const commonConfig = {
         new HtmlWebpackPlugin({
             title: 'OurTwobe',
             template: "src/index.ejs",
+            favicon: "src/app/logo.png",
         }),
         new ScriptExtHtmlWebpackPlugin({
             defaultAttribute: 'defer',
         }),
         new ForkTsCheckerWebpackPlugin(),
         new ESLintPlugin(),
-        new FaviconsWebpackPlugin({
-            logo: "./src/app/logo.png",
-            inject: true,
-            prefix: "assets/favicons/",
-        }),
         new ProgressPlugin({}),
     ],
     module: {
@@ -96,10 +91,6 @@ const commonConfig = {
     },
 };
 
-// A list of modules that are larger than 244kb,
-// just on their own, and trigger asset warnings.
-const modulesThatAreJustTooBig = [].map(name => `npm.${name.replace("/", "~")}`);
-
 module.exports = (env, argv) => {
     if (typeof argv !== 'undefined' && argv['mode'] === 'production') {
         process.env.NODE_ENV = "production";
@@ -130,12 +121,6 @@ module.exports = (env, argv) => {
             },
             performance: {
                 assetFilter: function (filename) {
-                    if (filename.startsWith("assets/favicons")) {
-                        return false;
-                    }
-                    if (modulesThatAreJustTooBig.some(name => filename.startsWith(name))) {
-                        return false;
-                    }
                     return !(/\.(map|LICENSE)$/.test(filename));
                 },
             },

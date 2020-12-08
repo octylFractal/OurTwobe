@@ -16,15 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import $ from "jquery";
 import "./css/css";
 import {renderApp} from "./react-setup";
 import {subscribeSelectors} from "./rx/subscribeSelectors";
 
-$(() => {
-    const container = document.createElement("div");
-    container.id = "application";
-    document.body.appendChild(container);
-    subscribeSelectors();
-    renderApp(container);
-});
+const container = document.createElement("div");
+container.id = "application";
+document.body.appendChild(container);
+subscribeSelectors();
+renderApp(container);
