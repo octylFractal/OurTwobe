@@ -82,6 +82,7 @@ const commonConfig = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
+        publicPath: '/',
     },
     stats: {
         chunks: true,
