@@ -31,7 +31,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import mu.KotlinLogging
 
-private val BASE_COMMAND = listOf("youtube-dl", "-q", "-o", "-", "-f", "bestaudio,best")
+private val BASE_COMMAND = listOf("youtube-dl", "--force-ipv4", "-q", "-o", "-", "-f", "bestaudio,best")
 
 class YouTubeDlProcessBinding(id: String) : AutoCloseable {
     private val logger = KotlinLogging.logger { }
