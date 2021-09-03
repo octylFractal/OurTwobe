@@ -47,7 +47,7 @@
     "bootswatch": "^4.5.3",
     "classnames": "^2.2.6",
     "eslint-webpack-plugin": "^2.4.1",
-    "immer": "^8.0.1",
+    "immer": "^9.0.6",
     "kotlin": "^1.4.20",
     "query-string": "^6.13.7",
     "randomcolor": "^0.6.2",
