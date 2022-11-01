@@ -17,10 +17,9 @@
  */
 
 import React from "react";
-import ReactDOM from "react-dom";
 import {App} from "./components/app/App";
+import {createRoot} from "react-dom/client";
 
 export function renderApp(container: Element): void {
-    const unstableCreateRoot: ReactDOM.Root = ReactDOM.unstable_createRoot(container);
-    unstableCreateRoot.render(<App/>);
+    createRoot(container).render(<App/>);
 }

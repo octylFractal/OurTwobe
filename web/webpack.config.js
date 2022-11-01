@@ -3,10 +3,9 @@ const path = require('path');
 const process = require('process');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
-const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
@@ -25,9 +24,7 @@ const commonConfig = {
             title: 'OurTwobe',
             template: "src/index.ejs",
             favicon: "src/app/logo.png",
-        }),
-        new ScriptExtHtmlWebpackPlugin({
-            defaultAttribute: 'defer',
+
         }),
         new ForkTsCheckerWebpackPlugin(),
         new ESLintPlugin(),
@@ -128,7 +125,7 @@ module.exports = (env, argv) => {
             optimization: {
                 minimizer: [
                     new TerserJSPlugin(),
-                    new OptimizeCSSAssetsPlugin(),
+                    new CssMinimizerPlugin(),
                 ],
                 splitChunks: {
                     chunks: 'all',
@@ -143,7 +140,6 @@ module.exports = (env, argv) => {
         mode: 'development',
         devServer: {
             port: 13444,
-            contentBase: './dist',
             hot: true,
             historyApiFallback: true,
             proxy: {

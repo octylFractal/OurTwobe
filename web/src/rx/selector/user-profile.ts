@@ -27,7 +27,7 @@ import {Store} from "redux";
 import {AxiosError} from "axios";
 
 export function subscribe(store: Store<LocalState>): void {
-    observeStore(store, createSimpleSelector(state => state.userToken))
+    observeStore(store, createSimpleSelector((state: LocalState) => state.userToken))
         .pipe(
             concatMap(async token => {
                 if (!token) {

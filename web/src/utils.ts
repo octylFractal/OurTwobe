@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export function oKeys<T>(o: T): (keyof T)[] {
+export function oKeys<T extends Record<string, unknown>>(o: T): (keyof T)[] {
     return Object.keys(o) as (keyof T)[];
 }
 

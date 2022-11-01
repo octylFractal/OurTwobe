@@ -18,12 +18,8 @@
 
 import { useEffect } from "react";
 import {useCallback, useState} from "react";
+import { FetchStore } from "react-suspense-fetch";
 
-export type FetchStore<Result, Input> = {
-    prefetch: (input: Input) => void;
-    evict: (input: Input) => void;
-    getResult: (input: Input) => Result;
-};
 type Refetch<Input> = (input: Input) => void;
 
 export function useFetch<Result, Input>(
@@ -50,11 +46,11 @@ export function useFetch<Result, Input>(
     const [result, setResult] = useState(() => {
         if (initialInput === undefined) return undefined;
         store.prefetch(initialInput);
-        return store.getResult(initialInput);
+        return store.get(initialInput);
     });
     const refetch = useCallback((nextInput: Input) => {
         store.prefetch(nextInput);
-        setResult(() => store.getResult(nextInput));
+        setResult(() => store.get(nextInput));
     }, [store]);
     return [result, refetch];
 }

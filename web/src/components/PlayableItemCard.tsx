@@ -51,7 +51,7 @@ export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progres
         <Card.Body className="p-0 w-100">
             <ProgressBar
                 animated variant="success" className="rounded-0"
-                now={progress} min={0} max={100} label={`${progress}%`} srOnly
+                now={progress} min={0} max={100} label={`${progress}%`} visuallyHidden
             />
         </Card.Body>
         }

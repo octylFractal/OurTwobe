@@ -22,7 +22,7 @@ import {LocalUserState} from "../LocalUserState";
 import Logo from "../../app/logo.png";
 import {NavbarImg} from "../NavbagImg";
 import {LocalServerDropdown} from "../LocalServerDropdown";
-import {Nav, Navbar} from "react-bootstrap";
+import {Container, Nav, Navbar} from "react-bootstrap";
 import {useUniqueId} from "../reactHelpers";
 import {DiscordApiProvider} from "../DiscordApiContext";
 import {ServerDropdown} from "../ServerDropdown";
@@ -31,25 +31,27 @@ export const AppNavbar: React.FC = () => {
     const id = useUniqueId("collapse");
 
     return <Navbar variant="dark" bg="dark" expand="md">
-        <Navbar.Brand href="/" className="py-3 pl-0">
-            <NavbarImg src={Logo} alt="Logo"/>
-            <h2 className="font-family-audiowide d-inline align-middle flex-grow-1">OurTwobe</h2>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls={id} className="mx-auto"/>
-        <Navbar.Collapse id={id} className="align-self-stretch align-items-stretch">
-            <Nav className="mr-auto">
-                <RoutedNavLink exact to="/">Home</RoutedNavLink>
-                <DiscordApiProvider fallback={<></>}>
-                    <React.Suspense fallback={<ServerDropdown guilds={[]}/>}>
-                        <LocalServerDropdown/>
-                    </React.Suspense>
-                </DiscordApiProvider>
-            </Nav>
-            <Nav className="ml-auto">
-                <Nav.Item>
-                    <LocalUserState/>
-                </Nav.Item>
-            </Nav>
-        </Navbar.Collapse>
+        <Container fluid>
+            <Navbar.Brand href="/" className="py-3 pl-0">
+                <NavbarImg src={Logo} alt="Logo"/>
+                <h2 className="font-family-audiowide d-inline align-middle flex-grow-1">OurTwobe</h2>
+            </Navbar.Brand>
+            <Navbar.Toggle aria-controls={id} className="mx-auto"/>
+            <Navbar.Collapse id={id}>
+                <Nav className="me-auto">
+                    <RoutedNavLink to="/" end>Home</RoutedNavLink>
+                    <DiscordApiProvider fallback={<></>}>
+                        <React.Suspense fallback={<ServerDropdown guilds={[]}/>}>
+                            <LocalServerDropdown/>
+                        </React.Suspense>
+                    </DiscordApiProvider>
+                </Nav>
+                <Nav className="ms-auto">
+                    <Nav.Item>
+                        <LocalUserState/>
+                    </Nav.Item>
+                </Nav>
+            </Navbar.Collapse>
+        </Container>
     </Navbar>;
 };

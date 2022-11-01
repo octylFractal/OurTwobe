@@ -19,7 +19,7 @@
 import React, {useEffect, useState} from "react";
 import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
-import {Redirect} from "react-router-dom";
+import {Navigate} from "react-router-dom";
 import {connect} from "react-redux";
 import {LocalState} from "../../redux/store";
 import {userToken} from "../../redux/reducer";
@@ -43,7 +43,7 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn, logIn}) => {
     }, [logIn]);
 
     if (loggedIn) {
-        return <Redirect to="/"/>;
+        return <Navigate to="/"/>;
     }
     if (failed) {
         return <div>

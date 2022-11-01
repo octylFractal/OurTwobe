@@ -53,7 +53,6 @@ export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels})
     return <Form.Group controlId={channelControlId}>
         <Form.Label className="mr-2">Channel:</Form.Label>
         <FormControl as="select" name="channel" size="sm"
-                     custom
                      value={selectedChannel || NONE}
                      onChange={(e: ChangeEvent<HTMLInputElement>): void => {
                          e.preventDefault();

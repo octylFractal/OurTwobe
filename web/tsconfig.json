@@ -6,6 +6,7 @@
         "noImplicitThis": true,
         "strictNullChecks": true,
         "module": "es2020",
+        "esModuleInterop": true,
         "target": "esnext",
         "jsx": "preserve",
         "importsNotUsedAsValues": "preserve",
@@ -19,12 +20,11 @@
             "./typings"
         ],
         "lib": [
-            "es6",
-            "es5",
-            "es2017",
-            "es2018",
-            "dom",
-            "scripthost"
+            "ES5",
+            "ES6",
+            "ES2021",
+            "DOM",
+            "ScriptHost"
         ],
         "skipLibCheck": true
     },

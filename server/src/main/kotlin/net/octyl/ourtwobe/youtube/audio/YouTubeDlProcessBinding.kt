@@ -19,6 +19,7 @@
 package net.octyl.ourtwobe.youtube.audio
 
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -32,11 +33,14 @@ import kotlinx.coroutines.withTimeoutOrNull
 import mu.KotlinLogging
 import java.nio.file.Path
 
-private val BASE_COMMAND = listOf("youtube-dl", "--force-ipv4", "-q", "-o", "-", "-f", "bestaudio,best")
+private val BASE_COMMAND = listOf(
+    "yt-dlp", "--force-ipv4", "-q", "-o", "-", "--format-sort-force", "-S", "hasaud,abr,size"
+)
 
 class YouTubeDlProcessBinding(cookiesPath: Path?, id: String) : AutoCloseable {
     private val logger = KotlinLogging.logger { }
     private val errorJob: Job
+    @OptIn(DelicateCoroutinesApi::class)
     val process =
         ProcessBuilder(BASE_COMMAND + ArrayList<String>().apply {
             cookiesPath?.let {

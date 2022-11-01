@@ -25,10 +25,8 @@ const store = configureStore({
     reducer
 });
 
-export const ExposeStore: React.FC = ({children}) => {
-    return React.createElement(Provider, {
-        store,
-    }, children);
+export const ExposeStore: React.FC<React.PropsWithChildren> = ({children}) => {
+    return <Provider store={store}>{children}</Provider>;
 };
 
 export function exposeStore(consumer: (store: Store<LocalState>) => void): void {

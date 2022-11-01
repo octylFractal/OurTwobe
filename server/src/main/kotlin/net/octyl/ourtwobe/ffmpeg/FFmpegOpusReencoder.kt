@@ -19,9 +19,9 @@
 package net.octyl.ourtwobe.ffmpeg
 
 import com.google.common.base.Throwables
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.onClosed
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,7 +90,7 @@ class FFmpegOpusReencoder(
 ) : AutoCloseable {
 
     private val closer = AutoCloser()
-    private val ctx = closer.register(avformat_alloc_context(), { s -> avformat_free_context(s) })
+    private val ctx = closer.register(avformat_alloc_context()) { s -> avformat_free_context(s) }
         ?: error("Unable to allocate context")
     private val decoderCtx: AVCodecContext
     private val frame: AVFrame
@@ -152,9 +152,8 @@ class FFmpegOpusReencoder(
                 ?: throw UnsupportedAudioFileException("Not decode-able by FFmpeg")
 
             decoderCtx = closer.register(
-                avcodec_alloc_context3(decoder),
-                { avctx -> avcodec_free_context(avctx) }
-            ) ?: error("Unable to allocate codec context")
+                avcodec_alloc_context3(decoder)
+            ) { avctx -> avcodec_free_context(avctx) } ?: error("Unable to allocate codec context")
 
             error = avcodec_parameters_to_context(decoderCtx, audioStream.codecpar())
             check(error == 0) { "Error passing parameters: " + avErr2Str(error) }
@@ -163,26 +162,22 @@ class FFmpegOpusReencoder(
             check(error == 0) { "Error opening decoder: " + avErr2Str(error) }
 
             frame = closer.register(
-                av_frame_alloc(),
-                { frame -> av_frame_free(frame) }
-            ) ?: error("Unable to allocate frame")
+                av_frame_alloc()
+            ) { frame -> av_frame_free(frame) } ?: error("Unable to allocate frame")
 
             packet = closer.register(
-                av_packet_alloc(),
-                { pkt -> av_packet_free(pkt) }
-            ) ?: error("Unable to allocate packet")
+                av_packet_alloc()
+            ) { pkt -> av_packet_free(pkt) } ?: error("Unable to allocate packet")
 
             val encoderFrameSize = 960
 
             audioFifo = closer.register(
-                av_audio_fifo_alloc(desiredFormat, 2, encoderFrameSize),
-                { fifo -> av_audio_fifo_free(fifo) }
-            ) ?: error("Unable to allocate FIFO")
+                av_audio_fifo_alloc(desiredFormat, 2, encoderFrameSize)
+            ) { fifo -> av_audio_fifo_free(fifo) } ?: error("Unable to allocate FIFO")
 
             outputFrame = closer.register(
-                av_frame_alloc(),
-                { frame -> av_frame_free(frame) }
-            ) ?: error("Unable to allocate frame")
+                av_frame_alloc()
+            ) { frame -> av_frame_free(frame) } ?: error("Unable to allocate frame")
             outputFrame.format(desiredFormat)
                 .nb_samples(encoderFrameSize)
                 .channel_layout(AV_CH_LAYOUT_STEREO)
@@ -201,9 +196,8 @@ class FFmpegOpusReencoder(
                     throw IOException("Unable to create Opus encoder: ${opus_strerror(errors[0])}")
                 }
                 this.opus = closer.register(
-                    opus,
-                    { opus_encoder_destroy(it) }
-                )
+                    opus
+                ) { opus_encoder_destroy(it) }
             }
         } catch (t: Throwable) {
             closeSilently(t)
@@ -235,7 +229,7 @@ class FFmpegOpusReencoder(
             }
     }
 
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    @OptIn(FlowPreview::class)
     private fun readPackets(volumeStateFlow: StateFlow<Double>): Flow<AVFrame> {
         return flow {
             coroutineScope {
@@ -261,7 +255,9 @@ class FFmpegOpusReencoder(
                                 }
                                 check(error == 0) { "Error getting frame from decoder: " + avErr2Str(error) }
                                 while (true) {
-                                    resamplerChannel.poll()?.let { newResampler ->
+                                    resamplerChannel.tryReceive()
+                                        .onClosed { if (it != null) throw it }
+                                        .getOrNull()?.let { newResampler ->
                                         // resampler changed since frame push, clear it out
                                         emitAll(resampler.pushFinalFrame(frame.pts()))
                                         resampler.close()

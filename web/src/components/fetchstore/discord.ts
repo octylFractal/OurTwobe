@@ -16,12 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {createFetchStore} from "react-hooks-fetch";
+import {createFetchStore, FetchStore} from "react-suspense-fetch";
 import {DiscordApi} from "../../discord/api";
 import {Guild} from "../../discord/api/response/Guild";
 import {GuildId, UserId} from "../../data/DiscordIds";
 import {Channel} from "../../discord/api/response/Channel";
-import {FetchStore} from "./patch";
 import {User} from "../../discord/api/response/User";
 
 export interface DiscordFetch {

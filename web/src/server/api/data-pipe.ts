@@ -150,7 +150,7 @@ function attachKeepAliveWatcher(source: EventSource, killDataPipe: () => void): 
             return;
         }
         clearTimeout(keepAliveTimer);
-        keepAliveTimer = setTimeout(killDataPipe, m.expectNextAt - Date.now());
+        keepAliveTimer = window.setTimeout(killDataPipe, m.expectNextAt - Date.now());
     });
 }
 

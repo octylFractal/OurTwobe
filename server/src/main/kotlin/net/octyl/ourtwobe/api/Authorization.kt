@@ -21,14 +21,12 @@ package net.octyl.ourtwobe.api
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
-import io.ktor.auth.Authentication
 import io.ktor.auth.authenticate
 import io.ktor.http.HttpStatusCode
 import io.ktor.routing.Route
 import io.ktor.routing.RouteSelector
 import io.ktor.routing.RouteSelectorEvaluation
 import io.ktor.routing.RoutingResolveContext
-import io.ktor.util.KtorExperimentalAPI
 
 interface Authorization {
     fun isAdmin(user: String): Boolean
@@ -38,7 +36,6 @@ interface Authorization {
 /**
  * Must be nested inside an [Route.authenticate] call.
  */
-@OptIn(KtorExperimentalAPI::class)
 fun Route.requireAdmin(
     authorization: Authorization,
     userIdExtractor: (call: ApplicationCall) -> String,
@@ -60,7 +57,7 @@ fun Route.requireAdmin(
     return route
 }
 
-private class AuthorizationRouteSelector(val authorizationName: String) : RouteSelector(RouteSelectorEvaluation.qualityConstant) {
+private class AuthorizationRouteSelector(val authorizationName: String) : RouteSelector() {
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         return RouteSelectorEvaluation.Constant
     }

@@ -52,13 +52,12 @@ export const ItemSubmission: React.FC = () => {
             .finally(() => setDisabled(false));
     }, [value, commApi, setDisabled, setError]);
 
-    return <Form inline onSubmit={onSubmit}>
+    return <Form onSubmit={onSubmit}>
         <Form.Group controlId={idId}>
             <Form.Label className="mx-1">Submit an item</Form.Label>
             <small className="mx-1">(video or playlist!)</small>
             <Form.Control
                 className="mx-1"
-                custom
                 type="text"
                 name="item-id"
                 value={value}

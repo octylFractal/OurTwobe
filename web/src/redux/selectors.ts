@@ -17,12 +17,12 @@
  */
 
 import {createSelector} from "@reduxjs/toolkit";
+import {OutputSelectorFields, Selector} from "reselect";
 
-export type Selector<S, R> = ((state: S) => R) & {
-    recomputations: () => number;
-    resetRecomputations: () => number;
-}
+export type SimpleSelector<S, R> = Selector<S, R> & OutputSelectorFields<(s: S) => R>;
 
-export function createSimpleSelector<S, R>(selector: (state: S) => R): Selector<S, R> {
-    return createSelector(selector, state => state);
+export function createSimpleSelector<S, R>(
+    selector: (state: S) => R
+): SimpleSelector<S, R> {
+    return createSelector(selector, state => state) as unknown as SimpleSelector<S, R>;
 }

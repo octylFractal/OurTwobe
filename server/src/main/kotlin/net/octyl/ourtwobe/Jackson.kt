@@ -22,9 +22,14 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 
-val MODULES = setOf(KotlinModule(), JavaTimeModule(), Jdk8Module())
+val MODULES = setOf(
+    KotlinModule.Builder().build(),
+    JavaTimeModule(),
+    Jdk8Module()
+)
 val JACKSON = JsonMapper.builder()
     .addModules(MODULES)
     .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)

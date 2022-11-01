@@ -24,7 +24,7 @@ import java.time.Instant
 
 sealed class DataPipeEvent {
     @JsonIgnore
-    val eventType = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, javaClass.kotlin.simpleName!!)!!
+    val eventType: String = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, javaClass.kotlin.simpleName!!)
 
     data class GuildSettings(
         val volume: Int,

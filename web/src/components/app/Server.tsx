@@ -24,9 +24,11 @@ import {UserIdQueue} from "../UserQueue";
 import {PlayableItemCard} from "../PlayableItemCard";
 import {NO_PLAYING_ITEM} from "../../server/api/data-pipe";
 import {Comparators} from "../../util/compare";
+import {requireNonNull} from "../../utils";
 
 const Server: React.FC = () => {
     const {guildId} = useParams<{ guildId: string }>();
+    requireNonNull(guildId);
     const queues = useSelector((state: LocalState) => state.guildState[guildId]?.queues || {});
     const nowPlaying = useSelector((state: LocalState) => state.guildState[guildId]?.playing || NO_PLAYING_ITEM);
     return <div className="d-flex flex-column">

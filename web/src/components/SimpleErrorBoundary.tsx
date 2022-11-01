@@ -47,7 +47,7 @@ export class SimpleErrorBoundary extends React.Component<SimpleErrorBoundaryProp
                     An error occurred in {this.props.context || "the application"}.
                 </Modal.Header>
                 <Alert color="danger">
-                    Raw Error:
+                    Raw Error:{' '}
                     <code className="bg-dark text-white p-1 m-1">
                         {error.message}
                     </code>

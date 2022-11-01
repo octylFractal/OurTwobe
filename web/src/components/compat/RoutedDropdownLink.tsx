@@ -28,7 +28,5 @@ export interface RoutedDropdownLinkProps {
 }
 
 export const RoutedDropdownLink: React.FC<RoutedDropdownLinkProps> = (props) => {
-    return <Dropdown.Item as={NavLink}
-                          activeClassName="active"
-                          {...props}/>;
+    return <Dropdown.Item as={NavLink} active {...props}/>;
 };

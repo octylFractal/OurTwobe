@@ -16,9 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// <reference types="react/experimental" />
-/// <reference types="react-dom/experimental" />
-
 async function initialize(): Promise<void> {
     await import(/* webpackPreload: true */ "./bootstrap");
 }

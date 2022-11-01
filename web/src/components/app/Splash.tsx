@@ -17,18 +17,18 @@
  */
 
 import React from "react";
-import {Jumbotron} from "react-bootstrap";
+import {Container} from "react-bootstrap";
 
 const Splash: React.FC = () => {
     return <div>
-        <Jumbotron className="text-center">
+        <Container className="text-center">
             <p className="lead">
                 Welcome to <span className="font-family-audiowide">OurTwobe</span>,
                 the place to share your tunes, jokes, and other miscellaneous YouTube content!
             </p>
 
             <p>To get started, log in to Discord in the upper-right corner.</p>
-        </Jumbotron>
+        </Container>
         <p className="lead">
             Now supporting
             {' '}

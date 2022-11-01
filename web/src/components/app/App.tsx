@@ -17,7 +17,7 @@
  */
 
 import React from "react";
-import {BrowserRouter as Router, Route, Switch} from "react-router-dom";
+import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
 import ScrollToTop from "../compat/ScrollToTop";
 import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
 import {AppNavbar} from "./AppNavbar";
@@ -30,7 +30,8 @@ const ServerLazy = React.lazy(() => import("./Server"));
 const ServerContextLazy = React.lazy(() => import("./ServerContext"));
 const ServerNavbarLazy = React.lazy(() => import("./ServerNavbar"));
 
-const CommonContainer: React.FC = ({children}) => <Container fluid className="p-3">{children}</Container>;
+const CommonContainer: React.FC<React.PropsWithChildren> = ({children}) =>
+    <Container fluid className="p-3">{children}</Container>;
 
 export const App: React.FC = () => {
     return <ExposeStore>
@@ -38,15 +39,15 @@ export const App: React.FC = () => {
             <Router>
                 <ScrollToTop/>
                 <AppNavbar/>
-                <Switch>
-                    <Route path="/discord/">
+                <Routes>
+                    <Route path="discord/" element={
                         <React.Suspense fallback={<p>Loading...</p>}>
                             <CommonContainer>
                                 <LoginHandlerLazy/>
                             </CommonContainer>
                         </React.Suspense>
-                    </Route>
-                    <Route path="/server/:guildId">
+                    }/>
+                    <Route path="server/:guildId" element={
                         <React.Suspense fallback={<p>Loading...</p>}>
                             <ServerContextLazy>
                                 <ServerNavbarLazy/>
@@ -55,15 +56,15 @@ export const App: React.FC = () => {
                                 </CommonContainer>
                             </ServerContextLazy>
                         </React.Suspense>
-                    </Route>
-                    <Route exact path="/">
+                    }/>
+                    <Route path="/" element={
                         <React.Suspense fallback={<p>Loading...</p>}>
                             <CommonContainer>
                                 <SplashLazy/>
                             </CommonContainer>
                         </React.Suspense>
-                    </Route>
-                </Switch>
+                    }/>
+                </Routes>
             </Router>
         </SimpleErrorBoundary>
     </ExposeStore>;

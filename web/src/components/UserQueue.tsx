@@ -19,13 +19,12 @@
 import React from "react";
 import {getAvatarUrl, getUserNameColor, User} from "../discord/api/response/User";
 import {PlayableItem} from "../server/api/data-pipe";
-import {Card, ListGroup} from "react-bootstrap";
+import {Card} from "react-bootstrap";
 import {PlayableItemCard} from "./PlayableItemCard";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {DiscordApiContext} from "./DiscordApiContext";
 import {useAutoFetch} from "./fetchstore/patch";
 import {UserId} from "../data/DiscordIds";
-import {NavbarImg} from "./NavbagImg";
 
 export interface UserQueueProps {
     owner: User

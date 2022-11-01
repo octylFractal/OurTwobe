@@ -1,0 +1,28 @@
+[versions]
+kotlin = "1.7.20"
+lwjgl = "3.3.1"
+logback = "1.2.3"
+
+[plugins]
+licenser = "org.cadixdev.licenser:0.6.1"
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+[libraries.lwjgl]
+module = "org.lwjgl:lwjgl"
+version.ref = "lwjgl"
+
+[libraries.lwjgl-jemalloc]
+module = "org.lwjgl:lwjgl-jemalloc"
+version.ref = "lwjgl"
+
+[libraries.lwjgl-opus]
+module = "org.lwjgl:lwjgl-opus"
+version.ref = "lwjgl"
+
+[libraries.logback-classic]
+module = "ch.qos.logback:logback-classic"
+version.ref = "logback"
+
+[libraries.logback-core]
+module = "ch.qos.logback:logback-core"
+version.ref = "logback"

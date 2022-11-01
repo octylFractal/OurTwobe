@@ -35,10 +35,6 @@ export interface DiscordApiProviderProps {
 
 const apis = new Map<string, ApiAndFetch>();
 
-export function getApi(userToken: string): DiscordApi {
-    return getApiAndFetch(userToken).api;
-}
-
 function getApiAndFetch(userToken: string): ApiAndFetch {
     let apiAndFetch = apis.get(userToken);
     if (typeof apiAndFetch === "undefined") {
@@ -49,7 +45,7 @@ function getApiAndFetch(userToken: string): ApiAndFetch {
     return apiAndFetch;
 }
 
-export const DiscordApiProvider: React.FC<DiscordApiProviderProps> = ({fallback, children}) => {
+export const DiscordApiProvider: React.FC<React.PropsWithChildren<DiscordApiProviderProps>> = ({fallback, children}) => {
     const userToken = useSelector((state: LocalState) => state.userToken) || null;
     const discordApi = useMemo(() => userToken ? getApiAndFetch(userToken) : null, [userToken]);
     if (!discordApi) {

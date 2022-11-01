@@ -57,7 +57,7 @@ export class DiscordApi extends ApiBase {
                 const axios = e as AxiosError;
                 if ("response" in axios && axios.response?.status === 429) {
                     // We are being rate limited :)
-                    const delay = axios.response.data.retry_after * 1000;
+                    const delay = (axios.response.data as {retry_after: number}).retry_after * 1000;
                     await new Promise(resolve => {
                         setTimeout(resolve, delay);
                     });

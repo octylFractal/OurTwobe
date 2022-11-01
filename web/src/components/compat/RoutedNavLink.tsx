@@ -18,17 +18,18 @@
 
 import React, {ReactNode} from "react";
 import {NavLink, NavLinkProps} from "react-router-dom";
+import {Nav} from "react-bootstrap";
 
 export interface RoutedNavLinkProps extends NavLinkProps {
     children?: ReactNode;
 }
 
 const RoutedNavLink: React.FC<RoutedNavLinkProps> = ({children, ...props}) => {
-    return <li className="nav-item">
-        <NavLink className="routed nav-link" activeClassName="active" {...props}>
+    return <Nav.Item>
+        <NavLink className={(isActive): string => isActive ? "active routed nav-link" : "routed nav-link"} {...props}>
             {children}
         </NavLink>
-    </li>;
+    </Nav.Item>;
 };
 
 export default RoutedNavLink;

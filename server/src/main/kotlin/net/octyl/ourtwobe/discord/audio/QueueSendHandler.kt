@@ -21,20 +21,21 @@ package net.octyl.ourtwobe.discord.audio
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.onClosed
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.sync.Mutex
 import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
@@ -85,10 +86,14 @@ class QueueSendHandler(
                     var millis = 0L
                     var lastPercent = 0.0
                     coroutineScope {
-                        val finished = Mutex(locked = true)
+                        val canceled = MutableStateFlow(false)
+                        val finished = MutableStateFlow(false)
                         launch {
                             // await cancellation token
                             val cancelChannel = cancelFlow.produceIn(this)
+                            val finishedChannel = finished
+                                .filter { it }
+                                .produceIn(this)
                             try {
                                 while (true) {
                                     // select returns Boolean?
@@ -97,25 +102,35 @@ class QueueSendHandler(
                                         cancelChannel.onReceive {
                                             it.itemId == playableItem.id
                                         }
-                                        finished.onLock {
+                                        finishedChannel.onReceive {
                                             null
                                         }
                                     }
                                     when(res) {
                                         true -> break
+                                        false -> continue
                                         null -> return@launch
                                     }
                                 }
                                 // cancel the song
-                                finished.unlock()
+                                canceled.value = true
                             } finally {
                                 cancelChannel.cancel()
+                                finishedChannel.cancel()
                             }
                         }
+                        val canceledChannel = canceled.filter { it }.produceIn(this)
                         audioFlow.collect {
-                            if (finished.tryLock()) {
-                                // the song is over, kill this coroutine
-                                throw PurposefulCancellationException()
+                            val result = canceledChannel.tryReceive()
+                            when {
+                                result.isSuccess -> {
+                                    // the song is over, kill this coroutine
+                                    throw PurposefulCancellationException()
+                                }
+                                result.isClosed -> error("canceledChannel should never close")
+                                result.isFailure -> {
+                                    // Fall-through
+                                }
                             }
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
@@ -129,7 +144,7 @@ class QueueSendHandler(
                             }
                             emit(base to it)
                         }
-                        finished.unlock()
+                        finished.value = true
                     }
                 } catch (e: PurposefulCancellationException) {
                     // no big deal
@@ -152,7 +167,9 @@ class QueueSendHandler(
 
     override fun canProvide() = true
 
-    override fun provide20MsAudio(): ByteBuffer? = audioQueue.poll()
+    override fun provide20MsAudio(): ByteBuffer? = audioQueue.tryReceive()
+        .onClosed { if (it != null) throw it }
+        .getOrNull()
 
     override fun isOpus() = true
 

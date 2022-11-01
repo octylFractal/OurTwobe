@@ -25,9 +25,9 @@ import {asNonNull} from "../../utils";
 import {GuildId} from "../../data/DiscordIds";
 import {Form, Nav, Navbar} from "react-bootstrap";
 import {useUniqueId} from "../reactHelpers";
-import {useAutoFetch} from "../fetchstore/patch";
 import {VolumeSlider} from "../VolumeSlider";
 import {ItemSubmission} from "../ItemSubmission";
+import {useAutoFetch} from "../fetchstore/patch";
 
 interface ServerNavbarProps {
     guildId: GuildId
@@ -50,11 +50,11 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
         <Navbar.Toggle aria-controls={id} className="mx-auto"/>
         <Navbar.Collapse id={id}>
             <Nav className="my-2">
-                <Form inline>
+                <Form>
                     <ChannelSelect guildId={guildId} channels={channels}/>
                 </Form>
                 <div className="mx-3 border-right border-light"/>
-                <Form inline>
+                <Form>
                     <VolumeSlider guildId={guildId}/>
                 </Form>
                 <div className="mx-3 border-right border-light"/>

@@ -1,28 +1,30 @@
-import net.minecrell.gradle.licenser.LicenseExtension
-import net.minecrell.gradle.licenser.header.HeaderStyle
+import org.cadixdev.gradle.licenser.header.HeaderStyle
 
 plugins {
-    id("com.techshroom.incise-blue")
     `lifecycle-base`
+    alias(libs.plugins.licenser)
 }
 
-inciseBlue {
-    license()
-}
-
-configure<LicenseExtension> {
+license {
+    exclude {
+        it.file.startsWith(project.buildDir)
+    }
     style.putAt("ts", HeaderStyle.BLOCK_COMMENT)
     style.putAt("tsx", HeaderStyle.BLOCK_COMMENT)
-    include("**/*.ts")
-    include("**/*.tsx")
+    header(rootProject.file("HEADER.txt"))
+    (this as ExtensionAware).extra.apply {
+        for (key in listOf("organization", "url")) {
+            set(key, rootProject.property(key))
+        }
+    }
     tasks.register("typescript") {
-        files = fileTree("src")
+        files.from("src")
     }
 }
 
 val compileJs = tasks.register<Exec>("compileJs") {
     // this file is a stand-in for `node_modules` -- I think it should be sufficient
-    inputs.file("package-lock.json")
+    inputs.file("pnpm-lock.yaml")
     inputs.files(
         "package.json", ".babelrc", "postcss.config.js", "tsconfig.json", "webpack.config.js",
         ".eslintignore", ".eslintrc.js"

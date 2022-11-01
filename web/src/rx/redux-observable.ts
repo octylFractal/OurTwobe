@@ -17,10 +17,13 @@
  */
 
 import {Store} from "redux";
+import {OutputSelectorFields, Selector} from "reselect";
 import {Observable} from "rxjs";
-import {Selector} from "../redux/selectors";
 
-export function observeStore<S, R>(store: Store<S>, selector: Selector<S, R>): Observable<R> {
+export function observeStore<S, R>(
+    store: Store<S>,
+    selector: Selector<S, R> & OutputSelectorFields<(s: S) => R>
+): Observable<R> {
     return new Observable<R>(subscriber => {
         // Fire initial value as well
         subscriber.next(selector(store.getState()));
