@@ -110,6 +110,10 @@ class QueuePlayer(
                             val channel = guild.getVoiceChannelById(command.channel)
                                 ?: error("Unknown channel: ${command.channel}")
                             logger.info("Joining channel '${channel.name}' (${channel.id})")
+                            if (queueDrainJob != null) {
+                                logger.warn { "Queue drain job leftover?" }
+                                queueDrainJob.cancelAndJoin()
+                            }
                             queueDrainJob = launch { drainQueue(channel, cancelFlow, volumeStateFlow) }
                             audioManager.openAudioConnection(channel)
                         }
@@ -117,6 +121,7 @@ class QueuePlayer(
                             logger.info("Disconnecting or disconnected from voice")
                             audioManager.closeAudioConnection()
                             queueDrainJob?.cancelAndJoin()
+                            queueDrainJob = null
                             _events.value?.let {
                                 _events.value = it.copy(progress = 100.0)
                             }
