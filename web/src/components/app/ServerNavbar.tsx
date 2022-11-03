@@ -23,7 +23,7 @@ import {ChannelSelect} from "../ChannelSelect";
 import {DiscordApiContext} from "../DiscordApiContext";
 import {asNonNull} from "../../utils";
 import {GuildId} from "../../data/DiscordIds";
-import {Form, Nav, Navbar} from "react-bootstrap";
+import {Container, Form, Nav, Navbar} from "react-bootstrap";
 import {useUniqueId} from "../reactHelpers";
 import {VolumeSlider} from "../VolumeSlider";
 import {ItemSubmission} from "../ItemSubmission";
@@ -40,27 +40,27 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
     const channels = useAutoFetch(discordApi.fetch.channels, guildId);
 
     return <Navbar bg="dark" variant="dark" expand="md">
-        <Navbar.Brand className="py-1 border-light mr-3">
+        <Container fluid>
+            <Navbar.Brand className="py-1 border-light mr-3">
             <span className="ourtwobe-at-server">
                 <h4 className="font-family-audiowide d-inline align-middle">{' @ '}</h4>
                 <ServerIcon guildData={guild} className="mr-3" width={32} height={32}/>
                 <span className="font-family-audiowide text-wrap align-middle">{guild.name}</span>
             </span>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls={id} className="mx-auto"/>
-        <Navbar.Collapse id={id}>
-            <Nav className="my-2">
-                <Form>
-                    <ChannelSelect guildId={guildId} channels={channels}/>
-                </Form>
-                <div className="mx-3 border-right border-light"/>
-                <Form>
-                    <VolumeSlider guildId={guildId}/>
-                </Form>
-                <div className="mx-3 border-right border-light"/>
-                <ItemSubmission/>
-            </Nav>
-        </Navbar.Collapse>
+            </Navbar.Brand>
+            <Navbar.Toggle aria-controls={id} className="mx-auto"/>
+            <Navbar.Collapse id={id}>
+                <Nav className="my-2 align-items-center">
+                    <Form className="flex-fill px-3 border-end border-light">
+                        <ChannelSelect guildId={guildId} channels={channels}/>
+                    </Form>
+                    <Form className="flex-fill px-3 border-end border-light">
+                        <VolumeSlider guildId={guildId}/>
+                    </Form>
+                    <ItemSubmission/>
+                </Nav>
+            </Navbar.Collapse>
+        </Container>
     </Navbar>;
 };
 

@@ -53,6 +53,7 @@ class YouTubeApi(token: String) {
                 parameters["key"] = token
             }
         }
+        expectSuccess = true
     }
 
     private suspend inline fun <reified T> getErrorHandled(block: HttpRequestBuilder.() -> Unit): T {

@@ -61,7 +61,7 @@ class GuildManager(
                     guildSettingsHolder.settings
                         .map { it.volume }
                         .distinctUntilChanged()
-                        .map { it / 100.0 }
+                        .map { it / 135.0 }
                         .stateIn(this)
                 )
             }

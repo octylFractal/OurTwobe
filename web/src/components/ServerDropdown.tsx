@@ -29,14 +29,14 @@ export interface ServerDropdownProps {
 export const ServerDropdown: React.FC<ServerDropdownProps> = ({guilds}) => {
     return <Dropdown as={NavItem}>
         <Dropdown.Toggle as={NavLink} disabled={guilds.length === 0}>Server</Dropdown.Toggle>
-        <Dropdown.Menu className="server-dropdown">
+        <Dropdown.Menu>
             {guilds.length === 0
                 ? <NavDropdown.Item disabled>No servers.</NavDropdown.Item>
                 : guilds.map(server =>
                     <RoutedDropdownLink
                         to={`/server/${server.id}`}
                         key={server.id}>
-                        <ServerIcon guildData={server} className="mr-3"/>
+                        <ServerIcon guildData={server} className="me-3"/>
                         {server.name}
                     </RoutedDropdownLink>
                 )}

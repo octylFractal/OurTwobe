@@ -26,7 +26,7 @@ import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {optionalFrom} from "../server/api/communication";
 import {useUniqueId} from "./reactHelpers";
-import {Form} from "react-bootstrap";
+import {Col, Form, Row} from "react-bootstrap";
 
 export interface ChannelSelectProps {
     guildId: GuildId
@@ -50,25 +50,28 @@ export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels})
             );
     }
 
-    return <Form.Group controlId={channelControlId}>
-        <Form.Label className="mr-2">Channel:</Form.Label>
-        <FormControl as="select" name="channel" size="sm"
-                     value={selectedChannel || NONE}
-                     onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-                         e.preventDefault();
-                         const value = e.currentTarget.value;
-                         // I have to reassign this apparently
-                         e.currentTarget.value = selectedChannel || NONE;
-                         setSelectedChannel(value === NONE ? undefined : value);
-                     }}>
-            <option value={NONE}>None</option>
-            <React.Suspense fallback={<></>}>
-                {channels
-                    .map(channel =>
-                        <option key={channel.id} value={channel.id}>{channel.name}</option>
-                    )
-                }
-            </React.Suspense>
-        </FormControl>
+    return <Form.Group as={Row} className="align-items-center" controlId={channelControlId}>
+        <Form.Label column>Channel:</Form.Label>
+        <Col>
+            <FormControl as="select" name="channel" size="sm"
+                         style={{minWidth: "20ch"}}
+                         value={selectedChannel || NONE}
+                         onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                             e.preventDefault();
+                             const value = e.currentTarget.value;
+                             // I have to reassign this apparently
+                             e.currentTarget.value = selectedChannel || NONE;
+                             setSelectedChannel(value === NONE ? undefined : value);
+                         }}>
+                <option value={NONE}>None</option>
+                <React.Suspense fallback={<></>}>
+                    {channels
+                        .map(channel =>
+                            <option key={channel.id} value={channel.id}>{channel.name}</option>
+                        )
+                    }
+                </React.Suspense>
+            </FormControl>
+        </Col>
     </Form.Group>;
 };

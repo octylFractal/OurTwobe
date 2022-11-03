@@ -17,7 +17,7 @@
  */
 
 import React, {FormEvent, useCallback, useState} from "react";
-import {Button, Form} from "react-bootstrap";
+import {Button, Col, Form, Row} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {CommApiContext} from "./CommApiContext";
@@ -52,22 +52,30 @@ export const ItemSubmission: React.FC = () => {
             .finally(() => setDisabled(false));
     }, [value, commApi, setDisabled, setError]);
 
-    return <Form onSubmit={onSubmit}>
-        <Form.Group controlId={idId}>
-            <Form.Label className="mx-1">Submit an item</Form.Label>
-            <small className="mx-1">(video or playlist!)</small>
-            <Form.Control
-                className="mx-1"
-                type="text"
-                name="item-id"
-                value={value}
-                onChange={e => void setValue(e.currentTarget.value)}
-                disabled={disabled}
-            />
-            <Button className="mx-1" type="submit" disabled={disabled || !value}>
-                Submit!
-            </Button>
-            {error && <Form.Control.Feedback className="mx-1">Failed to submit!</Form.Control.Feedback>}
+    return <Form className="flex-fill ps-3" onSubmit={onSubmit}>
+        <Form.Group as={Row} className="align-items-center" controlId={idId}>
+            <Form.Label column className="text-center">
+                Submit an item<br/>
+                <small>(video or playlist!)</small>
+            </Form.Label>
+            <Col>
+                <Form.Control
+                    className="mx-1"
+                    type="text"
+                    size="sm"
+                    name="item-id"
+                    value={value}
+                    onChange={e => void setValue(e.currentTarget.value)}
+                    disabled={disabled}
+                />
+            </Col>
+            <Col>
+                <Button className="mx-1" type="submit" size="sm" disabled={disabled || !value}>
+                    Submit!
+                </Button>
+            </Col>
+            {error && <Col><Form.Control.Feedback className="mx-1">Failed to submit!</Form.Control.Feedback></Col>}
         </Form.Group>
-    </Form>;
+    </Form>
+;
 };

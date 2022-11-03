@@ -22,7 +22,7 @@ import {LocalState} from "../redux/store";
 import {GuildId} from "../data/DiscordIds";
 import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
-import {Form} from "react-bootstrap";
+import {Col, Form, OverlayTrigger, Row, Tooltip} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {asNonNull} from "../utils";
 import {usePrevious} from "./hook/usePrevious";
@@ -65,25 +65,30 @@ export const VolumeSlider: React.FC<VolumeSliderProps> = ({guildId}) => {
         [setVolume, userVolume]
     );
 
-    const volumeWithChangeData = userVolume === volume
-        ? userVolume
-        : `Changing from ${volume} to ${userVolume}...`;
-
-    return <Form.Group controlId={volId}>
-        <Form.Label className="mr-2">Volume:</Form.Label>
-        {/* Restore a normal value for width */}
-        <Form.Control
-            className="w-auto mr-1"
-            type="range"
-            name="volume"
-            min={0} max={100}
-            value={userVolume || 0}
-            onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-                setUserVolume(e.currentTarget.valueAsNumber);
-            }}
-            onMouseUp={doChange}
-            onTouchEnd={doChange}
-            onBlur={doChange}/>
-        <span>{volumeWithChangeData}</span>
+    return <Form.Group as={Row} className="align-items-center" controlId={volId}>
+        <Form.Label column>Volume:</Form.Label>
+        <Col className="p-0">
+            <span>{volume}</span>
+        </Col>
+        <Col className="d-flex align-items-center">
+            {/* Restore a normal value for width */}
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip>
+                    {userVolume}
+                </Tooltip>
+            }>
+                <Form.Range
+                    className="w-auto border-success"
+                    name="volume"
+                    min={0} max={100}
+                    value={userVolume || 0}
+                    onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                        setUserVolume(e.currentTarget.valueAsNumber);
+                    }}
+                    onMouseUp={doChange}
+                    onTouchEnd={doChange}
+                    onBlur={doChange}/>
+            </OverlayTrigger>
+        </Col>
     </Form.Group>;
 };
