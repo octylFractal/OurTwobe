@@ -71,7 +71,7 @@ fun main() {
         .setAudioSendFactory(::NanoSendSystem)
         .build()
 
-    val embeddedServer: NettyApplicationEngine = embeddedServer(Netty, port = 13445, host = "localhost") {
+    val embeddedServer: NettyApplicationEngine = embeddedServer(Netty, port = 13445, host = "127.0.0.1") {
         module(
             DiscordIdAuthorization(config.owner),
             InternalPeeker(jda),

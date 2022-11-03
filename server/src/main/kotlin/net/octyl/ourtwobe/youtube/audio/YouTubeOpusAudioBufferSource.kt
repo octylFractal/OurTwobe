@@ -22,7 +22,6 @@ import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.writer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -45,7 +44,6 @@ class YouTubeOpusAudioBufferSource(
 
     private val logger = KotlinLogging.logger { }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun provideAudio(id: String, volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return flow {
             YouTubeDlProcessBinding(cookiesPath, id).use { ytdl ->

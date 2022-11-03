@@ -48,7 +48,6 @@ class QueueManager {
 
     private val awaitingNewItem = mutableListOf<CompletableDeferred<Unit>>()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun insert(owner: String, item: PlayableItem) {
         rwLock.write {
             queues.put(owner, item)

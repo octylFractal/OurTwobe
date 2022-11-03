@@ -34,7 +34,7 @@ import mu.KotlinLogging
 import java.nio.file.Path
 
 private val BASE_COMMAND = listOf(
-    "yt-dlp", "--force-ipv4", "-q", "-o", "-", "--format-sort-force", "-S", "hasaud,abr,size"
+    "yt-dlp", "--force-ipv4", "-q", "-o", "-", "-f", "bestaudio"
 )
 
 class YouTubeDlProcessBinding(cookiesPath: Path?, id: String) : AutoCloseable {

@@ -64,10 +64,10 @@ dependencies {
     implementation("net.dv8tion:JDA:4.4.0_350")
 
     val javacppPresets = mapOf(
-        "ffmpeg" to "4.3.1",
+        "ffmpeg" to "5.1.2",
         "javacpp" to null
     )
-    val javacppVersion = "1.5.4"
+    val javacppVersion = "1.5.8"
     // take desktop platforms, 64 bit
     val wantedPlatforms = listOf("linux", "macosx", "windows").map { "$it-x86_64" }
     for ((name, version) in javacppPresets) {

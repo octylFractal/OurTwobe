@@ -24,18 +24,15 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onClosed
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
@@ -61,7 +58,7 @@ class QueueSendHandler(
     @OptIn(FlowPreview::class)
     fun play(
         playableItems: Flow<PlayableItem>,
-        cancelFlow: Flow<PlayerCommand.Skip>,
+        skipFlow: Flow<PlayerCommand.Skip>,
         volumeStateFlow: StateFlow<Double>
     ): Flow<DataPipeEvent.ProgressItem> {
         return flow {
@@ -86,47 +83,15 @@ class QueueSendHandler(
                     var millis = 0L
                     var lastPercent = 0.0
                     coroutineScope {
-                        val canceled = MutableStateFlow(false)
-                        val finished = MutableStateFlow(false)
-                        launch {
-                            // await cancellation token
-                            val cancelChannel = cancelFlow.produceIn(this)
-                            val finishedChannel = finished
-                                .filter { it }
-                                .produceIn(this)
-                            try {
-                                while (true) {
-                                    // select returns Boolean?
-                                    // true -> cancel, false -> loop, null -> return
-                                    val res = select<Boolean?> {
-                                        cancelChannel.onReceive {
-                                            it.itemId == playableItem.id
-                                        }
-                                        finishedChannel.onReceive {
-                                            null
-                                        }
-                                    }
-                                    when(res) {
-                                        true -> break
-                                        false -> continue
-                                        null -> return@launch
-                                    }
-                                }
-                                // cancel the song
-                                canceled.value = true
-                            } finally {
-                                cancelChannel.cancel()
-                                finishedChannel.cancel()
-                            }
-                        }
-                        val canceledChannel = canceled.filter { it }.produceIn(this)
+                        val skipChannel = skipFlow.produceIn(this)
                         audioFlow.collect {
-                            val result = canceledChannel.tryReceive()
+                            val result = skipChannel.tryReceive()
                             when {
                                 result.isSuccess -> {
                                     // the song is over, kill this coroutine
                                     throw PurposefulCancellationException()
                                 }
+
                                 result.isClosed -> error("canceledChannel should never close")
                                 result.isFailure -> {
                                     // Fall-through
@@ -138,13 +103,14 @@ class QueueSendHandler(
                                 lastPercent = percent
                                 if (percent >= 100) {
                                     // don't report the end yet
+                                    skipChannel.cancel()
                                     return@collect
                                 }
                                 base = base.copy(progress = percent)
                             }
                             emit(base to it)
                         }
-                        finished.value = true
+                        skipChannel.cancel()
                     }
                 } catch (e: PurposefulCancellationException) {
                     // no big deal
