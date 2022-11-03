@@ -142,6 +142,7 @@ module.exports = (env, argv) => {
             port: 13444,
             hot: true,
             historyApiFallback: true,
+            compress: false,
             proxy: {
                 '/api': {
                     target: "http://127.0.0.1:13445",

@@ -36,6 +36,7 @@ import net.dv8tion.jda.api.audio.OpusPacket
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext
 import org.bytedeco.ffmpeg.avcodec.AVPacket
 import org.bytedeco.ffmpeg.avutil.AVAudioFifo
+import org.bytedeco.ffmpeg.avutil.AVChannelLayout
 import org.bytedeco.ffmpeg.avutil.AVDictionary
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.avcodec.av_packet_alloc
@@ -63,6 +64,7 @@ import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_free
 import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_read
 import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_size
 import org.bytedeco.ffmpeg.global.avutil.av_audio_fifo_write
+import org.bytedeco.ffmpeg.global.avutil.av_channel_layout_from_mask
 import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_frame_free
 import org.bytedeco.ffmpeg.global.avutil.av_frame_get_buffer
@@ -136,13 +138,15 @@ class FFmpegOpusReencoder(
             val sampleRate = OpusPacket.OPUS_SAMPLE_RATE
 
             inputFormat = Format(
-                channelLayout = audioStream.codecpar().channel_layout(),
+                channelLayout = audioStream.codecpar().ch_layout(),
                 sampleFormat = audioStream.codecpar().format(),
                 timeBase = audioStream.time_base(),
                 sampleRate = audioStream.codecpar().sample_rate()
             )
             outputFormat = Format(
-                channelLayout = AV_CH_LAYOUT_STEREO,
+                channelLayout = AVChannelLayout().apply {
+                    av_channel_layout_from_mask(this, AV_CH_LAYOUT_STEREO)
+                },
                 sampleFormat = desiredFormat,
                 timeBase = audioStream.time_base(),
                 sampleRate = sampleRate
@@ -180,7 +184,7 @@ class FFmpegOpusReencoder(
             ) { frame -> av_frame_free(frame) } ?: error("Unable to allocate frame")
             outputFrame.format(desiredFormat)
                 .nb_samples(encoderFrameSize)
-                .channel_layout(AV_CH_LAYOUT_STEREO)
+            av_channel_layout_from_mask(outputFrame.ch_layout(), AV_CH_LAYOUT_STEREO)
 
             error = av_frame_get_buffer(outputFrame, 0)
             if (error != 0) {
@@ -258,11 +262,11 @@ class FFmpegOpusReencoder(
                                     resamplerChannel.tryReceive()
                                         .onClosed { if (it != null) throw it }
                                         .getOrNull()?.let { newResampler ->
-                                        // resampler changed since frame push, clear it out
-                                        emitAll(resampler.pushFinalFrame(frame.pts()))
-                                        resampler.close()
-                                        resampler = newResampler
-                                    } ?: break
+                                            // resampler changed since frame push, clear it out
+                                            emitAll(resampler.pushFinalFrame(frame.pts()))
+                                            resampler.close()
+                                            resampler = newResampler
+                                        } ?: break
                                 }
                                 emitAll(resampler.pushFrame(frame))
                             }

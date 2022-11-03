@@ -18,24 +18,25 @@
 
 package net.octyl.ourtwobe.util
 
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.octyl.ourtwobe.JACKSON
-import java.io.Writer
 
 /**
  * An abstraction over SSE. Also handles keep-alives.
  */
 class ServerSentEventStream(
-    private val response: Writer,
+    private val response: ByteWriteChannel,
 ) {
 
-    private fun writeField(name: String, value: String) {
+    private suspend fun writeField(name: String, value: String) {
         for (line in value.lineSequence()) {
-            response.write(name)
-            response.write(": ")
-            response.write(line)
-            response.write("\n")
+            response.writeStringUtf8(name)
+            response.writeStringUtf8(": ")
+            response.writeStringUtf8(line)
+            response.writeStringUtf8("\n")
         }
     }
 
@@ -43,7 +44,7 @@ class ServerSentEventStream(
         withContext(Dispatchers.IO) {
             exhaustive(when (event) {
                 is Event.Close -> {
-                    response.close()
+                    response.close(null)
                     return@withContext
                 }
                 is Event.Comment -> {
@@ -59,7 +60,7 @@ class ServerSentEventStream(
             })
 
             // finish out the event!
-            response.write("\n")
+            response.writeStringUtf8("\n")
             response.flush()
         }
     }

@@ -20,42 +20,41 @@ package net.octyl.ourtwobe.api
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.SerializationFeature
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.Principal
-import io.ktor.auth.UnauthorizedResponse
-import io.ktor.auth.authenticate
-import io.ktor.auth.basic
 import io.ktor.client.utils.EmptyContent
-import io.ktor.features.AutoHeadResponse
-import io.ktor.features.CallLogging
-import io.ktor.features.Compression
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.HttpStatusCodeContent
-import io.ktor.jackson.jackson
-import io.ktor.request.path
-import io.ktor.request.receive
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.put
-import io.ktor.routing.route
-import io.ktor.routing.routing
-import io.ktor.sessions.Sessions
-import io.ktor.sessions.cookie
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.Principal
+import io.ktor.server.auth.UnauthorizedResponse
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.basic
+import io.ktor.server.http.content.HttpStatusCodeContent
+import io.ktor.server.plugins.autohead.AutoHeadResponse
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.compression.Compression
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.path
+import io.ktor.server.request.receive
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.Sessions
+import io.ktor.server.sessions.cookie
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.octyl.ourtwobe.InternalPeeker
@@ -120,29 +119,29 @@ fun Application.module(
     }
 
     install(StatusPages) {
-        status(HttpStatusCode.NotFound) {
+        status(HttpStatusCode.NotFound) { _ ->
             call.respond(ApiError("not.found", "${call.request.path()} was not found"))
         }
-        status(HttpStatusCode.InternalServerError) {
+        status(HttpStatusCode.InternalServerError) { _ ->
             call.respond(ApiError("internal.server.error", "An error has occurred in OurTwobe."))
         }
-        status(HttpStatusCode.Unauthorized) {
-            if (subject is UnauthorizedResponse) {
+        status(HttpStatusCode.Unauthorized) { _ ->
+            if (content is UnauthorizedResponse) {
                 call.respond(UnauthorizedResponse())
             }
         }
-        exception<ApiErrorException> {
-            call.respond(it.statusCode, it.error)
+        exception<ApiErrorException> { call, cause ->
+            call.respond(cause.statusCode, cause.error)
         }
-        exception<JsonProcessingException> {
-            logger.debug(it) { "Caught JSON formatting error" }
+        exception<JsonProcessingException> { call, cause ->
+            logger.debug(cause) { "Caught JSON formatting error" }
             call.respond(
                 HttpStatusCode.BadRequest,
                 ApiError("invalid.json", "Your JSON is not valid")
             )
         }
-        exception<Throwable> {
-            logger.warn(it) { "Caught exception in OurTwobe API handler" }
+        exception<Throwable> { call, cause ->
+            logger.warn(cause) { "Caught exception in OurTwobe API handler" }
             call.respond(
                 HttpStatusCode.InternalServerError,
                 ApiError("internal.server.error", "An error has occurred in OurTwobe.")

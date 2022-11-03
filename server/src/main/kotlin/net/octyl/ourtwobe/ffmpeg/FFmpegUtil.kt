@@ -18,6 +18,8 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import org.bytedeco.ffmpeg.avutil.AVChannelLayout
+import org.bytedeco.ffmpeg.global.avutil.AV_CHANNEL_ORDER_NATIVE
 import org.bytedeco.ffmpeg.global.avutil.av_make_error_string
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin
 import org.bytedeco.javacpp.BytePointer
@@ -64,4 +66,7 @@ fun avOptSetList(obj: Pointer, name: String, longs: LongArray, search_flags: Int
 }
 
 // ffmpeg accepts channels by hex mask
-fun channelLayoutName(channelLayout: Long): String = "0x${channelLayout.toString(16)}"
+fun channelLayoutName(channelLayout: AVChannelLayout): String {
+    assert(channelLayout.order() == AV_CHANNEL_ORDER_NATIVE)
+    return "0x${channelLayout.u_mask().toString(16)}"
+}

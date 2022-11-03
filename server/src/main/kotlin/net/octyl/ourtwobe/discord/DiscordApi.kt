@@ -20,23 +20,23 @@ package net.octyl.ourtwobe.discord
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import io.ktor.client.HttpClient
-import io.ktor.client.call.receive
+import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
+import io.ktor.serialization.jackson.jackson
 import net.octyl.ourtwobe.MODULES
 
 private const val DISCORD_BASE_URL = "https://discord.com/api/v8"
 
 class DiscordApi {
     private val client = HttpClient(OkHttp) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer {
+        install(ContentNegotiation) {
+            jackson {
                 registerModules(MODULES)
                 disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             }
@@ -48,7 +48,7 @@ class DiscordApi {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
-        return response.takeIf { it.status.isSuccess() }?.receive()
+        return response.takeIf { it.status.isSuccess() }?.body()
     }
 }
 

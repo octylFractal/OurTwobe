@@ -20,19 +20,17 @@ package net.octyl.ourtwobe.youtube.api
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.features.DefaultRequest
-import io.ktor.client.features.HttpCallValidator
-import io.ktor.client.features.HttpResponseValidator
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.statement.readText
-import io.ktor.http.HttpHeaders
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.path
 import io.ktor.http.takeFrom
+import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -41,26 +39,27 @@ import net.octyl.ourtwobe.MODULES
 import net.octyl.ourtwobe.util.nagle
 import java.time.Duration
 
-private const val YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3"
-
 class YouTubeApi(token: String) {
     private val client = HttpClient(OkHttp) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer {
+        install(ContentNegotiation) {
+            jackson {
                 registerModules(MODULES)
                 disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             }
         }
         install(DefaultRequest) {
-            url.parameters["key"] = token
+            url {
+                takeFrom("https://www.googleapis.com/youtube/v3/")
+                parameters["key"] = token
+            }
         }
     }
 
     private suspend inline fun <reified T> getErrorHandled(block: HttpRequestBuilder.() -> Unit): T {
         try {
-            return client.get(block = block)
+            return client.get(block = block).body()
         } catch (e: ClientRequestException) {
-            val error = e.response.readText()
+            val error = e.response.bodyAsText()
             throw IllegalStateException("YouTube API Error: $error", e)
         }
     }
@@ -74,7 +73,7 @@ class YouTubeApi(token: String) {
             do {
                 val page = getErrorHandled<YouTubePage<PlaylistItem>> {
                     url {
-                        takeFrom("$YOUTUBE_BASE_URL/playlistItems")
+                        path("playlistItems")
                         parameters["playlistId"] = playlistId
                         parameters["part"] = "contentDetails"
                         parameters["maxResults"] = "50"
@@ -97,7 +96,7 @@ class YouTubeApi(token: String) {
             .map { ids ->
                 val page = getErrorHandled<YouTubePage<Video>> {
                     url {
-                        takeFrom("$YOUTUBE_BASE_URL/videos")
+                        path("videos")
                         parameters.appendAll("id", ids)
                         parameters.appendAll("part", listOf("snippet", "contentDetails"))
                     }

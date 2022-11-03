@@ -18,10 +18,11 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import org.bytedeco.ffmpeg.avutil.AVChannelLayout
 import org.bytedeco.ffmpeg.avutil.AVRational
 
 data class Format(
-    val channelLayout: Long,
+    val channelLayout: AVChannelLayout,
     val sampleFormat: Int,
     val timeBase: AVRational,
     val sampleRate: Int

@@ -53,16 +53,14 @@ abstract class FilterGraph(
 
     private val closer = AutoCloser()
 
-    private val graph: AVFilterGraph
+    private val graph: AVFilterGraph = closer.register(
+        avfilter_graph_alloc()
+    ) { avfilter_graph_free(it) } ?: error("Unable to allocate filter graph")
     private val bufferCtx: AVFilterContext
-    protected val bufferSinkCtx: AVFilterContext
+    private val bufferSinkCtx: AVFilterContext
     private val outputFrame: AVFrame
 
     init {
-        graph = closer.register(
-            avfilter_graph_alloc(),
-            { avfilter_graph_free(it) }
-        ) ?: error("Unable to allocate filter graph")
 
         val allFilters = sequence {
             yield(Filter("abuffer", "src") { ctx ->
@@ -73,13 +71,13 @@ abstract class FilterGraph(
             })
             yieldAll(filters)
             yield(Filter("aformat", "format") { ctx ->
-                av_opt_set(ctx, "channel_layouts", channelLayoutName(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
+                av_opt_set(ctx, "ch_layouts", channelLayoutName(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
             })
             yield(Filter("abuffersink", "sink") { ctx ->
-                avOptSetList(ctx, "channel_layouts", longArrayOf(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
+                av_opt_set(ctx, "ch_layouts", channelLayoutName(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
