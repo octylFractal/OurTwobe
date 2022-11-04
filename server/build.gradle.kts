@@ -72,7 +72,7 @@ dependencies {
 
     implementation("com.google.guava:guava:31.1-jre")
 
-    implementation("net.dv8tion:JDA:4.4.0_350")
+    implementation("net.dv8tion:JDA:4.4.0_352")
 
     val javacppPresets = mapOf(
         "ffmpeg" to "5.1.2",
@@ -96,10 +96,10 @@ dependencies {
 
     implementation("com.techshroom:greenish-jungle:0.0.3")
 
-    implementation("org.slf4j:slf4j-api:1.7.30")
+    implementation("org.slf4j:slf4j-api:2.0.3")
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
-    implementation("io.github.microutils:kotlin-logging:2.0.3")
+    implementation("io.github.microutils:kotlin-logging:3.0.4")
 
     implementation(platform("com.fasterxml.jackson:jackson-bom:2.13.4.20221013"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
