@@ -50,7 +50,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug")
 
-    implementation(platform("io.ktor:ktor-bom:2.1.3"))
+    implementation(platform("io.ktor:ktor-bom:2.2.3"))
 
     implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-okhttp")
@@ -96,12 +96,12 @@ dependencies {
 
     implementation("com.techshroom:greenish-jungle:0.0.3")
 
-    implementation("org.slf4j:slf4j-api:2.0.3")
+    implementation("org.slf4j:slf4j-api:2.0.6")
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
     implementation("io.github.microutils:kotlin-logging:3.0.4")
 
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.13.4.20221013"))
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.14.2"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-properties")

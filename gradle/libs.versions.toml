@@ -1,7 +1,7 @@
 [versions]
-kotlin = "1.7.20"
+kotlin = "1.7.10"
 lwjgl = "3.3.1"
-logback = "1.4.4"
+logback = "1.4.5"
 
 [plugins]
 licenser = "org.cadixdev.licenser:0.6.1"
