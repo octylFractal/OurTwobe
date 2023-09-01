@@ -72,7 +72,7 @@ dependencies {
 
     implementation("com.google.guava:guava:31.1-jre")
 
-    implementation("net.dv8tion:JDA:4.4.0_352")
+    implementation("net.dv8tion:JDA:4.4.1_353")
 
     val javacppPresets = mapOf(
         "ffmpeg" to "5.1.2",
