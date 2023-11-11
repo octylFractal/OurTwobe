@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {MonoTypeOperatorFunction} from "rxjs";
+import {type MonoTypeOperatorFunction} from "rxjs";
 import {retryBackoff} from "backoff-rxjs";
 
 export function logErrorAndRetry<T>(context: string): MonoTypeOperatorFunction<T> {

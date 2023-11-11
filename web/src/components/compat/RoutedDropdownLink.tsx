@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ReactNode} from "react";
+import React, {type ReactNode} from "react";
 import {NavLink} from "react-router-dom";
 import {Dropdown} from "react-bootstrap";
 

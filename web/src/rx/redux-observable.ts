@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Store} from "redux";
-import {OutputSelectorFields, Selector} from "reselect";
+import {type Store} from "redux";
 import {Observable} from "rxjs";
+import type {SimpleSelector} from "../redux/selectors";
 
 export function observeStore<S, R>(
     store: Store<S>,
-    selector: Selector<S, R> & OutputSelectorFields<(s: S) => R>
+    selector: SimpleSelector<S, R>
 ): Observable<R> {
     return new Observable<R>(subscriber => {
         // Fire initial value as well

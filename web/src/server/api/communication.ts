@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {ChannelId} from "../../data/DiscordIds";
+import {type ChannelId} from "../../data/DiscordIds";
 import {ApiBase} from "../../util/ApiBase";
 
 /**

@@ -21,7 +21,7 @@ import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
 import {Navigate} from "react-router-dom";
 import {connect} from "react-redux";
-import {LocalState} from "../../redux/store";
+import {type LocalState} from "../../redux/store";
 import {userToken} from "../../redux/reducer";
 
 interface LoginHandlerProps {

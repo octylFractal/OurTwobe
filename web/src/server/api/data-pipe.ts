@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Observable, of} from "rxjs";
-import {oKeys, runBlock, Writeable} from "../../utils";
-import {exhaustMap, map, retryWhen, tap} from "rxjs/operators";
+import {Observable, of, retry} from "rxjs";
+import {oKeys, runBlock, type Writeable} from "../../utils";
+import {exhaustMap, map, tap} from "rxjs/operators";
 import {logErrorAndRetry} from "../../rx/observer";
-import {ChannelId, UserId} from "../../data/DiscordIds";
+import {type ChannelId, type UserId} from "../../data/DiscordIds";
 
 export interface DataPipeError {
     error: true
@@ -82,7 +82,7 @@ export type DataPipeEvent = GuildSettings | QueueItem | RemoveItem | ProgressIte
 
 const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
     // Force an object with all types present
-    const obj: {[T in DataPipeEvent["type"]]: true} = {
+    const obj: { [T in DataPipeEvent["type"]]: true } = {
         guildSettings: true,
         queueItem: true,
         removeItem: true,
@@ -198,21 +198,22 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
         }
     });
     return new DataPipe(observable.pipe(
-        retryWhen(errors =>
-            errors.pipe(
-                tap(err => {
-                    if (err !== MANUAL_RESET) {
-                        console.error("Hard error from data-pipe, re-auth & restart...", err);
-                    }
-                }),
-                // Re-authenticate, when it's done retry will occur
-                exhaustMap(() =>
-                    of({}).pipe(
-                        map(authenticate),
-                        logErrorAndRetry("authentication")
-                    )
-                ),
-            )
-        )
+        retry({
+            delay: errors =>
+                errors.pipe(
+                    tap(err => {
+                        if (err !== MANUAL_RESET) {
+                            console.error("Hard error from data-pipe, re-auth & restart...", err);
+                        }
+                    }),
+                    // Re-authenticate, when it's done retry will occur
+                    exhaustMap(() =>
+                        of({}).pipe(
+                            map(authenticate),
+                            logErrorAndRetry("authentication")
+                        )
+                    ),
+                )
+        })
     ));
 }

@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {User} from "./response/User";
-import {AxiosError, AxiosRequestConfig} from "axios";
-import {GuildId} from "../../data/DiscordIds";
-import {Channel} from "./response/Channel";
-import {Guild} from "./response/Guild";
+import {type User} from "./response/User";
+import {AxiosError, type AxiosRequestConfig} from "axios";
+import {type GuildId} from "../../data/DiscordIds";
+import {type Channel} from "./response/Channel";
+import {type Guild} from "./response/Guild";
 import {ApiBase} from "../../util/ApiBase";
 
 const DISCORD_BASE = "https://discord.com/api/v8";

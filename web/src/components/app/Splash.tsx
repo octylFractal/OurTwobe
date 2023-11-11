@@ -33,7 +33,7 @@ const Splash: React.FC = () => {
             Now supporting
             {' '}
             <a href="https://knowyourmeme.com/memes/cultures/fully-automated-luxury-gay-space-communism">
-                <span className="font-family-monoton mr-1">Fully{' '}</span>
+                <span className="font-family-monoton me-1">Fully{' '}</span>
                 <span className="font-family-press-start-2p">Automated</span>
                 {' '}
                 <span className="font-family-sail">Luxury</span>

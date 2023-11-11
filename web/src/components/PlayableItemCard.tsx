@@ -18,7 +18,7 @@
 
 import {Button, Card, ProgressBar} from "react-bootstrap";
 import React from "react";
-import {NO_PLAYING_ITEM, PlayableItem} from "../server/api/data-pipe";
+import {NO_PLAYING_ITEM, type PlayableItem} from "../server/api/data-pipe";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {CommApiContext} from "./CommApiContext";
 

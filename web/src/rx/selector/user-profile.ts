@@ -22,8 +22,8 @@ import {concatMap} from "rxjs/operators";
 import {userInfo, userToken} from "../../redux/reducer";
 import {logErrorAndRetry} from "../observer";
 import {DiscordApi} from "../../discord/api";
-import {LocalState} from "../../redux/store";
-import {Store} from "redux";
+import {type LocalState} from "../../redux/store";
+import {type Store} from "redux";
 import {AxiosError} from "axios";
 
 export function subscribe(store: Store<LocalState>): void {

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {GuildId} from "../../../data/DiscordIds";
+import {type GuildId} from "../../../data/DiscordIds";
 
 export interface Guild {
     readonly id: GuildId

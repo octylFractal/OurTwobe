@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {FormEvent, useCallback, useState} from "react";
+import React, {type FormEvent, useCallback, useState} from "react";
 import {Button, Col, Form, Row} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {useNonNullContext} from "./hook/useNonNullContext";

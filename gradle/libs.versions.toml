@@ -1,11 +1,25 @@
 [versions]
-kotlin = "1.7.10"
-lwjgl = "3.3.2"
+kotlin = "1.9.20"
+lwjgl = "3.3.3"
 logback = "1.4.11"
 
 [plugins]
 licenser = "org.cadixdev.licenser:0.6.1"
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+[libraries]
+ktor-bom = "io.ktor:ktor-bom:2.3.6"
+coroutines-bom = "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.3"
+jackson-bom = "com.fasterxml.jackson:jackson-bom:2.15.3"
+
+greenishJungle = "com.techshroom:greenish-jungle:0.0.3"
+
+guava = "com.google.guava:guava:32.1.3-jre"
+
+jda = "net.dv8tion:JDA:4.4.1_353"
+
+slf4j-api = "org.slf4j:slf4j-api:2.0.9"
+kotlin-logging = "io.github.microutils:kotlin-logging:3.0.5"
 
 [libraries.lwjgl]
 module = "org.lwjgl:lwjgl"

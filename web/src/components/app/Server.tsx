@@ -16,21 +16,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
+import React, {useMemo} from "react";
 import {useSelector} from "react-redux";
-import {LocalState} from "../../redux/store";
+import {type LocalState} from "../../redux/store";
 import {useParams} from "react-router-dom";
 import {UserIdQueue} from "../UserQueue";
 import {PlayableItemCard} from "../PlayableItemCard";
 import {NO_PLAYING_ITEM} from "../../server/api/data-pipe";
 import {Comparators} from "../../util/compare";
 import {requireNonNull} from "../../utils";
+import {createSimpleSelector} from "../../redux/selectors";
 
 const Server: React.FC = () => {
     const {guildId} = useParams<{ guildId: string }>();
     requireNonNull(guildId);
-    const queues = useSelector((state: LocalState) => state.guildState[guildId]?.queues || {});
-    const nowPlaying = useSelector((state: LocalState) => state.guildState[guildId]?.playing || NO_PLAYING_ITEM);
+    const queueSelector = useMemo(
+        () => createSimpleSelector((state: LocalState) => state.guildState[guildId]?.queues || {}),
+        [guildId]
+    );
+    const queues = useSelector(queueSelector);
+    const nowPlayingSelector = useMemo(
+        () => createSimpleSelector((state: LocalState) => state.guildState[guildId]?.playing || NO_PLAYING_ITEM),
+        [guildId]
+    );
+    const nowPlaying = useSelector(nowPlayingSelector);
     return <div className="d-flex flex-column">
         <div className="d-inline-flex flex-column align-items-center">
             <p>Now playing:</p>

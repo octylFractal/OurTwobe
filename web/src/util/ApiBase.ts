@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import axios, {AxiosInstance, AxiosRequestConfig, Method} from "axios";
+import axios, {type AxiosInstance, type AxiosRequestConfig, type Method} from "axios";
 
 export abstract class ApiBase {
     protected readonly client: AxiosInstance;

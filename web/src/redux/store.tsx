@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {configureStore, Store} from "@reduxjs/toolkit";
+import {configureStore, type Store} from "@reduxjs/toolkit";
 import {reducer} from "./reducer";
 import React from "react";
 import {Provider} from "react-redux";

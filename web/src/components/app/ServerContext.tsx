@@ -20,14 +20,14 @@ import React, {useEffect, useMemo} from "react";
 import {DiscordApiProvider} from "../DiscordApiContext";
 import {Navigate, useParams} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
-import {LocalState} from "../../redux/store";
-import {DataPipeError, DataPipeEvent, newDataPipe} from "../../server/api/data-pipe";
+import {type LocalState} from "../../redux/store";
+import {type DataPipeError, type DataPipeEvent, newDataPipe} from "../../server/api/data-pipe";
 import {CommApiContext} from "../CommApiContext";
 import {OurTwobeCommApi} from "../../server/api/communication";
-import {GuildId} from "../../data/DiscordIds";
+import {type GuildId} from "../../data/DiscordIds";
 import {tap} from "rxjs/operators";
 import {exhaustiveCheck} from "../../utils";
-import {Dispatch} from "redux";
+import {type Dispatch} from "redux";
 import {guildState} from "../../redux/reducer";
 import {AxiosError} from "axios";
 

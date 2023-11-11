@@ -19,8 +19,8 @@
 import React, {useMemo} from "react";
 import {DiscordApi} from "../discord/api";
 import {useSelector} from "react-redux";
-import {LocalState} from "../redux/store";
-import {createFetches, DiscordFetch} from "./fetchstore/discord";
+import {type LocalState} from "../redux/store";
+import {createFetches, type DiscordFetch} from "./fetchstore/discord";
 
 export interface ApiAndFetch {
     api: DiscordApi

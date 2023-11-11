@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ChangeEvent, useCallback, useEffect, useState} from "react";
+import React, {type ChangeEvent, useCallback, useEffect, useState} from "react";
 import {useSelector} from "react-redux";
-import {LocalState} from "../redux/store";
-import {GuildId} from "../data/DiscordIds";
+import {type LocalState} from "../redux/store";
+import {type GuildId} from "../data/DiscordIds";
 import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {Col, Form, OverlayTrigger, Row, Tooltip} from "react-bootstrap";

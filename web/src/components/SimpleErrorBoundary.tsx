@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ReactNode} from "react";
+import React, {type ReactNode} from "react";
 import {Alert, Modal} from "react-bootstrap";
 
 interface SimpleErrorBoundaryProps extends React.PropsWithChildren<Record<string, unknown>> {

@@ -22,7 +22,7 @@ import {ServerIcon} from "../ServerIcon";
 import {ChannelSelect} from "../ChannelSelect";
 import {DiscordApiContext} from "../DiscordApiContext";
 import {asNonNull} from "../../utils";
-import {GuildId} from "../../data/DiscordIds";
+import {type GuildId} from "../../data/DiscordIds";
 import {Container, Form, Nav, Navbar} from "react-bootstrap";
 import {useUniqueId} from "../reactHelpers";
 import {VolumeSlider} from "../VolumeSlider";
@@ -41,10 +41,10 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
 
     return <Navbar bg="dark" variant="dark" expand="md">
         <Container fluid>
-            <Navbar.Brand className="py-1 border-light mr-3">
+            <Navbar.Brand className="py-1 border-light me-3">
             <span className="ourtwobe-at-server">
                 <h4 className="font-family-audiowide d-inline align-middle">{' @ '}</h4>
-                <ServerIcon guildData={guild} className="mr-3" width={32} height={32}/>
+                <ServerIcon guildData={guild} className="me-3"/>
                 <span className="font-family-audiowide text-wrap align-middle">{guild.name}</span>
             </span>
             </Navbar.Brand>

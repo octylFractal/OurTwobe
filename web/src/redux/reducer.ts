@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {combineReducers, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {combineReducers, createSlice, type PayloadAction} from "@reduxjs/toolkit";
 import {LS_CONSTANTS} from "../app/localStorage";
-import {GuildId, UserId} from "../data/DiscordIds";
-import {PlayableItem, ProgressItem, QueueItem, RemoveItem} from "../server/api/data-pipe";
-import produce from "immer";
+import {type GuildId, type UserId} from "../data/DiscordIds";
+import {type PlayableItem, type ProgressItem, type QueueItem, type RemoveItem} from "../server/api/data-pipe";
+import {produce} from "immer";
 import {oKeys} from "../utils";
-import {User} from "../discord/api/response/User";
+import {type User} from "../discord/api/response/User";
 
 export interface UserInfoRecord {
     readonly heardFromDiscord: boolean
@@ -97,9 +97,10 @@ const {actions: guildState, reducer: guildStateSlice} = createSlice({
     initialState: {} as GuildStateMap,
     reducers: {
         updateSettings(state, {payload}: GuildPayloadAction<GuildSettings>): void {
-            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
-                draft.settings = dropGuildId(payload);
-            });
+            state[payload.guildId] = {
+                ...state[payload.guildId],
+                settings: dropGuildId(payload),
+            };
         },
         removeQueuedItem(state, {payload}: GuildPayloadAction<RemoveItem>): void {
             const queue = state[payload.guildId]?.queues?.[payload.owner]?.items || [];

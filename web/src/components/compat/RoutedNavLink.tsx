@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ReactNode} from "react";
-import {NavLink, NavLinkProps} from "react-router-dom";
+import React, {type ReactNode} from "react";
+import {NavLink, type NavLinkProps} from "react-router-dom";
 import {Nav} from "react-bootstrap";
 
 export interface RoutedNavLinkProps extends NavLinkProps {
@@ -26,7 +26,7 @@ export interface RoutedNavLinkProps extends NavLinkProps {
 
 const RoutedNavLink: React.FC<RoutedNavLinkProps> = ({children, ...props}) => {
     return <Nav.Item>
-        <NavLink className={(isActive): string => isActive ? "active routed nav-link" : "routed nav-link"} {...props}>
+        <NavLink className={({isActive}): string => isActive ? "active routed nav-link" : "routed nav-link"} {...props}>
             {children}
         </NavLink>
     </Nav.Item>;

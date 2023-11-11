@@ -18,7 +18,7 @@
 
 import { useEffect } from "react";
 import {useCallback, useState} from "react";
-import { FetchStore } from "react-suspense-fetch";
+import { type FetchStore } from "react-suspense-fetch";
 
 type Refetch<Input> = (input: Input) => void;
 

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {PayloadAction} from "@reduxjs/toolkit";
+import {type PayloadAction} from "@reduxjs/toolkit";
 
 type NestedRecord<K1 extends keyof never, K2 extends keyof never, V> = Record<K1, Record<K2, V>>;
 
@@ -37,13 +37,4 @@ export function nestedRecordAdd<K1 extends keyof never, K2 extends keyof never, 
         }
         nested[key2Extractor(intermediate)] = valueExtractor(intermediate);
     };
-}
-
-export function nestedSetAdd<K1 extends keyof never, K2 extends keyof never, I>(
-    key1Extractor: (intermediate: I) => K1,
-    key2Extractor: (intermediate: I) => K2,
-): NestedRecordAdder<K1, K2, I, boolean> {
-    return nestedRecordAdd(key1Extractor, key2Extractor,
-        // cast to ensure correct generic
-        () => true as boolean);
 }

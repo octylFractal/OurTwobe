@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {UserId} from "../../../data/DiscordIds";
+import {type UserId} from "../../../data/DiscordIds";
 import randomColor from "randomcolor";
 
 export interface User {

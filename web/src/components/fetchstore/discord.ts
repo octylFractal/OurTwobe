@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {createFetchStore, FetchStore} from "react-suspense-fetch";
+import {createFetchStore, type FetchStore} from "react-suspense-fetch";
 import {DiscordApi} from "../../discord/api";
-import {Guild} from "../../discord/api/response/Guild";
-import {GuildId, UserId} from "../../data/DiscordIds";
-import {Channel} from "../../discord/api/response/Channel";
-import {User} from "../../discord/api/response/User";
+import {type Guild} from "../../discord/api/response/Guild";
+import {type GuildId, type UserId} from "../../data/DiscordIds";
+import {type Channel} from "../../discord/api/response/Channel";
+import {type User} from "../../discord/api/response/User";
 
 export interface DiscordFetch {
     guilds: FetchStore<Guild[], unknown>

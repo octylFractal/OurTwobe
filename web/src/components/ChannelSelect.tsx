@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {ChangeEvent} from "react";
-import {Channel} from "../discord/api/response/Channel";
+import React, {type ChangeEvent} from "react";
+import {type Channel} from "../discord/api/response/Channel";
 import FormControl from "react-bootstrap/FormControl";
 import {useSelector} from "react-redux";
-import {LocalState} from "../redux/store";
-import {ChannelId, GuildId} from "../data/DiscordIds";
+import {type LocalState} from "../redux/store";
+import {type ChannelId, type GuildId} from "../data/DiscordIds";
 import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {optionalFrom} from "../server/api/communication";

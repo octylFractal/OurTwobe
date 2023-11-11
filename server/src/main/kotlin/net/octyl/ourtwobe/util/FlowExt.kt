@@ -22,7 +22,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.time.withTimeoutOrNull
 import java.time.Duration
@@ -40,12 +39,20 @@ fun <T> Flow<T>.nagle(count: Int, maxDuration: Duration): Flow<List<T>> {
                     send(it)
                 }
             }
-            while (!channel.isClosedForReceive) {
+            var closed = false
+            while (!closed) {
                 val chunk = mutableListOf<T>()
                 withTimeoutOrNull(maxDuration) {
-                    for (item in channel) {
-                        chunk.add(item)
-                        if (chunk.size >= count) break
+                    while (true) {
+                        val next = channel.receiveCatching()
+                        if (next.isClosed) {
+                            closed = true
+                            break
+                        }
+                        chunk.add(next.getOrThrow())
+                        if (chunk.size >= count) {
+                            break
+                        }
                     }
                 }
                 if (chunk.isNotEmpty()) {

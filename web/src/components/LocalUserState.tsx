@@ -17,7 +17,7 @@
  */
 
 import {connect} from "react-redux";
-import {LocalState} from "../redux/store";
+import {type LocalState} from "../redux/store";
 import {UserState} from "./UserState";
 import {userToken} from "../redux/reducer";
 

@@ -20,7 +20,7 @@ import {Dropdown, NavDropdown, NavItem, NavLink} from "react-bootstrap";
 import React from "react";
 import {RoutedDropdownLink} from "./compat/RoutedDropdownLink";
 import {ServerIcon} from "./ServerIcon";
-import {Guild} from "../discord/api/response/Guild";
+import {type Guild} from "../discord/api/response/Guild";
 
 export interface ServerDropdownProps {
     guilds: Guild[]

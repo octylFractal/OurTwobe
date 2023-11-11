@@ -19,7 +19,7 @@
 import React from "react";
 import {NavbarImg} from "./NavbagImg";
 import classNames from "classnames";
-import {Guild} from "../discord/api/response/Guild";
+import {type Guild} from "../discord/api/response/Guild";
 
 interface ServerIconProps {
     guildData: Guild;

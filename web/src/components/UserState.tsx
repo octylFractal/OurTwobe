@@ -17,14 +17,14 @@
  */
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import React, {ReactElement} from "react";
+import React, {type ReactElement} from "react";
 import {generateOAuthLink} from "../discord/auth";
-import {UserInfoRecord} from "../redux/reducer";
+import {type UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
 import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 import {Nav, NavDropdown} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
-import {getAvatarUrl, getUserNameColor, User} from "../discord/api/response/User";
+import {getAvatarUrl, getUserNameColor, type User} from "../discord/api/response/User";
 import {faSpinner} from "@fortawesome/free-solid-svg-icons/faSpinner";
 import {faSignInAlt} from "@fortawesome/free-solid-svg-icons/faSignInAlt";
 

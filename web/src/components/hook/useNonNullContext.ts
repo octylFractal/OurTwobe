@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Context, useContext} from "react";
+import {type Context, useContext} from "react";
 import {requireNonNull} from "../../utils";
 
 export function useNonNullContext<T>(context: Context<T>) : NonNullable<T> {

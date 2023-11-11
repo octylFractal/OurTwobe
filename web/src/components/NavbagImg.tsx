@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
+import React, {type ImgHTMLAttributes} from "react";
 import classNames from "classnames";
 
-export const NavbarImg: React.FC<JSX.IntrinsicElements["img"]> = (props) => {
+export const NavbarImg: React.FC<ImgHTMLAttributes<HTMLImageElement>> = (props) => {
     return <img {...props} alt={props.alt} width={props.width ?? 48} height={props.height ?? 48}
                 className={classNames(props.className, "navbar-img")}/>;
 };

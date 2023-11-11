@@ -17,14 +17,14 @@
  */
 
 import React from "react";
-import {getAvatarUrl, getUserNameColor, User} from "../discord/api/response/User";
-import {PlayableItem} from "../server/api/data-pipe";
+import {getAvatarUrl, getUserNameColor, type User} from "../discord/api/response/User";
+import {type PlayableItem} from "../server/api/data-pipe";
 import {Card} from "react-bootstrap";
 import {PlayableItemCard} from "./PlayableItemCard";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {DiscordApiContext} from "./DiscordApiContext";
 import {useAutoFetch} from "./fetchstore/patch";
-import {UserId} from "../data/DiscordIds";
+import {type UserId} from "../data/DiscordIds";
 
 export interface UserQueueProps {
     owner: User
@@ -35,7 +35,7 @@ export const UserQueue: React.FC<UserQueueProps> = ({owner, items}) => {
     return <Card>
         <Card.Header className="text-center">
             <img alt="Avatar"
-                 className="rounded-circle border border-light mr-3"
+                 className="rounded-circle border border-light me-3"
                  src={getAvatarUrl(owner)}
                  width={40}
                  height={40}

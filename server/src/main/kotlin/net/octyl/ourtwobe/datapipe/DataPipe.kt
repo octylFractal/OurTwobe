@@ -18,7 +18,7 @@
 
 package net.octyl.ourtwobe.datapipe
 
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
@@ -47,7 +47,7 @@ class DataPipe : AutoCloseable {
     /**
      * One-time flow that will produce all messages.
      */
-    @OptIn(FlowPreview::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun consumeMessages(): Flow<Event> = flowOf(
         keepAliveFlow(),
         messageChannel.consumeAsFlow()

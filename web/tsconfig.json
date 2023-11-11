@@ -9,7 +9,7 @@
         "esModuleInterop": true,
         "target": "esnext",
         "jsx": "preserve",
-        "importsNotUsedAsValues": "preserve",
+        "verbatimModuleSyntax": true,
         "allowJs": false,
         "sourceMap": true,
         "strict": true,

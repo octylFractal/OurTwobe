@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from "react";
+import React, {StrictMode} from "react";
 import {App} from "./components/app/App";
 import {createRoot} from "react-dom/client";
 
 export function renderApp(container: Element): void {
-    createRoot(container).render(<App/>);
+    createRoot(container).render(<StrictMode><App/></StrictMode>);
 }
