@@ -48,12 +48,15 @@ export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progres
                   }}
                   alt="Thumbnail"/>
         {typeof progress !== "undefined" &&
-        <Card.Body className="p-0 w-100">
-            <ProgressBar
-                animated variant="success" className="rounded-0"
-                now={progress} min={0} max={100} label={`${progress}%`} visuallyHidden
-            />
-        </Card.Body>
+            <Card.Body className="p-0 w-100">
+                <div className="progress rounded-0">
+                    <ProgressBar
+                        animated variant="success"
+                        now={progress} min={0} max={100} label={`${progress}%`} visuallyHidden
+                        title="Item Playthrough Progress" isChild
+                    />
+                </div>
+            </Card.Body>
         }
         <Card.Body style={{maxWidth: item.thumbnail.width}}>
             <Card.Text className="text-center">{item.title}<br/>({item.youtubeId})</Card.Text>

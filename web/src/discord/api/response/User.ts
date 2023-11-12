@@ -37,7 +37,8 @@ export function getAvatarUrl(user: User): string {
 export function getUserNameColor(user: User): string {
     const digest = digestMessage(`${user.username}#${user.discriminator}`);
     return randomColor({
-        seed: digest
+        seed: digest,
+        luminosity: "light",
     });
 }
 

@@ -21,7 +21,6 @@ import React, {type ReactElement} from "react";
 import {generateOAuthLink} from "../discord/auth";
 import {type UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
-import DiscordLogo from "../app/Discord-Logo+Wordmark-Color.svg";
 import {Nav, NavDropdown} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {getAvatarUrl, getUserNameColor, type User} from "../discord/api/response/User";
@@ -35,10 +34,19 @@ function loading(): ReactElement {
 }
 
 const UserProfileDisplay: React.FC<User> = (props) => {
+    const size = 44;
     return <>
-        <NavbarImg src={getAvatarUrl(props)}
+        <NavbarImg src={`${getAvatarUrl(props)}?size=${size}`}
                    alt="Avatar"
-                   className="rounded-circle border border-light"/>
+                   className="rounded-circle border border-light"
+                   style={
+                       // use content-box so the border doesn't affect the size of the image
+                       {
+                           boxSizing: "content-box",
+                       }
+                   }
+                   width={size}
+                   height={size}/>
         <span style={{color: getUserNameColor(props)}}>{props.username}</span>
     </>;
 };
@@ -58,7 +66,9 @@ export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord
         return <Nav.Link href="#" onClick={() => void window.location.assign(generateOAuthLink())}
                          className="d-block">
             <FontAwesomeIcon icon={faSignInAlt}/> Log In to
-            <img className="d-inline-block" height={48} src={DiscordLogo} alt="Discord Logo"/>
+            <img className="d-inline-block" height={48}
+                 src={new URL("../app/Discord-Logo+Wordmark-Color.svg", import.meta.url).toString()}
+                 alt="Discord Logo"/>
         </Nav.Link>;
     }
 

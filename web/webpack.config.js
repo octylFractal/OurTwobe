@@ -11,6 +11,7 @@ const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
 const {TsconfigPathsPlugin} = require('tsconfig-paths-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
+const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 
 const resolveExtensions = ['.ts', '.tsx', '.js'];
 const commonConfig = {
@@ -60,13 +61,6 @@ const commonConfig = {
                     'sass-loader',
                 ],
             },
-            {
-                test: /\.(png|svg|jpg|gif)$/,
-                include: path.resolve(__dirname, 'src'),
-                use: [
-                    'file-loader',
-                ],
-            },
         ],
     },
     resolve: {
@@ -86,6 +80,38 @@ const commonConfig = {
     },
     optimization: {
         runtimeChunk: "single",
+        minimize: true,
+        minimizer: [
+            new ImageMinimizerPlugin({
+                minimizer: [
+                    {
+                        implementation: ImageMinimizerPlugin.sharpMinify,
+                    },
+                    {
+                        implementation: ImageMinimizerPlugin.imageminMinify,
+                        options: {
+                            // Lossless optimization with custom option
+                            // Feel free to experiment with options for better result for you
+                            plugins: [
+                                ["gifsicle", {interlaced: true}],
+                                ["jpegtran", {progressive: true}],
+                                ["optipng", {optimizationLevel: 5}],
+                                [
+                                    "svgo",
+                                    {
+                                        plugins: [
+                                            {
+                                                name: "preset-default",
+                                            },
+                                        ],
+                                    },
+                                ],
+                            ],
+                        },
+                    }
+                ],
+            }),
+        ],
     },
 };
 

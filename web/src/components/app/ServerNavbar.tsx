@@ -43,9 +43,11 @@ const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
         <Container fluid>
             <Navbar.Brand className="py-1 border-light me-3">
             <span className="ourtwobe-at-server">
-                <h4 className="font-family-audiowide d-inline align-middle">{' @ '}</h4>
-                <ServerIcon guildData={guild} className="me-3"/>
-                <span className="font-family-audiowide text-wrap align-middle">{guild.name}</span>
+                <h2 className="h4">
+                    <span className="font-family-audiowide d-inline align-middle">{' @ '}</span>
+                    <ServerIcon guildData={guild} className="me-3"/>
+                    <span className="font-family-audiowide text-wrap align-middle">{guild.name}</span>
+                </h2>
             </span>
             </Navbar.Brand>
             <Navbar.Toggle aria-controls={id} className="mx-auto"/>

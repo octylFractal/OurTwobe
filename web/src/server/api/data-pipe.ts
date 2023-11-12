@@ -57,7 +57,7 @@ export const NO_PLAYING_ITEM: ProgressItem = {
         youtubeId: "N/A",
         title: "Nothing",
         thumbnail: {
-            url: "https://ipfs.octyl.net/ipfs/QmbcJFuGroTNKv1sgeePeW19EkqRZuBkCLpYopbZxt7B1T/ourtwobe_notplaying.png",
+            url: new URL("../../app/not-playing.png", import.meta.url).toString(),
             width: 320,
             height: 180,
         },

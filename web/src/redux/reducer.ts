@@ -83,12 +83,11 @@ export interface GuildState {
 
 type GuildStateMap = Record<GuildId, GuildState>;
 
-type GuildPayloadAction<T> = PayloadAction<T & {guildId: GuildId}>;
+type GuildPayloadAction<T> = PayloadAction<T & { guildId: GuildId }>;
 
-function dropGuildId<T>(payload: T & {guildId: GuildId}): T {
+function dropGuildId<T>(payload: T & { guildId?: GuildId }): T {
     return produce(payload, draft => {
-        const fixedDraft = draft as T & {guildId?: GuildId};
-        delete fixedDraft.guildId;
+        delete draft.guildId;
     });
 }
 
@@ -97,13 +96,21 @@ const {actions: guildState, reducer: guildStateSlice} = createSlice({
     initialState: {} as GuildStateMap,
     reducers: {
         updateSettings(state, {payload}: GuildPayloadAction<GuildSettings>): void {
-            state[payload.guildId] = {
-                ...state[payload.guildId],
-                settings: dropGuildId(payload),
-            };
+            const fixedPayload = dropGuildId(payload);
+            if (!(payload.guildId in state)) {
+                state[payload.guildId] = {
+                    settings: fixedPayload,
+                    queues: {},
+                };
+                return;
+            }
+            state[payload.guildId].settings = fixedPayload;
         },
         removeQueuedItem(state, {payload}: GuildPayloadAction<RemoveItem>): void {
-            const queue = state[payload.guildId]?.queues?.[payload.owner]?.items || [];
+            if (!(payload.guildId in state)) {
+                return;
+            }
+            const queue = state[payload.guildId].queues[payload.owner]?.items || [];
             const index = queue.findIndex(it => it.id == payload.itemId);
             if (index === -1) {
                 return;
@@ -111,16 +118,20 @@ const {actions: guildState, reducer: guildStateSlice} = createSlice({
             queue.splice(index, 1);
         },
         addQueuedItem(state, {payload}: GuildPayloadAction<QueueItem>): void {
-            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
-                draft.queues = produce(draft.queues || {}, queuesDraft => {
-                    queuesDraft[payload.owner] = produce(queuesDraft[payload.owner] || {items: []}, queueDraft => {
-                        queueDraft.items.push(payload.item);
-                    });
-                });
-            });
+            if (!(payload.guildId in state)) {
+                return;
+            }
+            const queues = state[payload.guildId].queues;
+            if (!(payload.owner in queues)) {
+                queues[payload.owner] = {items: []};
+            }
+            queues[payload.owner].items.push(payload.item);
         },
         clearQueues(state, {payload}: GuildPayloadAction<unknown>): void {
-            const guildState = state[payload.guildId] || {};
+            if (!(payload.guildId in state)) {
+                return;
+            }
+            const guildState = state[payload.guildId];
             guildState.queues = {};
             guildState.playing = undefined;
         },
@@ -141,9 +152,10 @@ const {actions: guildState, reducer: guildStateSlice} = createSlice({
                         items.splice(index, 1);
                     });
             }
-            state[payload.guildId] = produce(state[payload.guildId] || {}, draft => {
-                draft.playing = payload.progress >= 100 ? undefined : dropGuildId(payload);
-            });
+            state[payload.guildId] = {
+                ...state[payload.guildId],
+                playing: payload.progress >= 100 ? undefined : dropGuildId(payload),
+            };
         },
     },
 });

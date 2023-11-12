@@ -19,7 +19,6 @@
 import React from "react";
 import RoutedNavLink from "../compat/RoutedNavLink";
 import {LocalUserState} from "../LocalUserState";
-import Logo from "../../app/logo.png";
 import {NavbarImg} from "../NavbagImg";
 import {LocalServerDropdown} from "../LocalServerDropdown";
 import {Container, Nav, Navbar} from "react-bootstrap";
@@ -33,8 +32,9 @@ export const AppNavbar: React.FC = () => {
     return <Navbar variant="dark" bg="dark" expand="md">
         <Container fluid>
             <Navbar.Brand href="/" className="py-3 pl-0">
-                <NavbarImg src={Logo} alt="Logo"/>
-                <h2 className="font-family-audiowide d-inline align-middle flex-grow-1">OurTwobe</h2>
+                <NavbarImg src={new URL("../../app/logo.png?w=48&h=48", import.meta.url).toString()}
+                           alt="YouTube logo with colors inverted and a red hammer and sickle"/>
+                <h1 className="h2 font-family-audiowide d-inline align-middle flex-grow-1">OurTwobe</h1>
             </Navbar.Brand>
             <Navbar.Toggle aria-controls={id} className="mx-auto"/>
             <Navbar.Collapse id={id}>

@@ -23,23 +23,23 @@ import {type Guild} from "../discord/api/response/Guild";
 
 interface ServerIconProps {
     guildData: Guild;
-    width?: number;
-    height?: number;
+    size?: number;
     className?: string;
 }
 
 export const ServerIcon: React.FC<ServerIconProps> = ({guildData, ...props}) => {
-    const width = props.width ?? 48;
-    const height = props.height ?? 48;
+    const size = props.size ?? 48;
     const classes = classNames(props.className, "rounded-circle server-icon", {
         "server-icon-text": !guildData.iconUrl
     });
     if (guildData.iconUrl) {
-        return <NavbarImg className={classes} width={width} height={height} src={guildData.iconUrl}/>;
+        return <NavbarImg className={classes} width={size} height={size} src={`${guildData.iconUrl}?size=${size}`}
+                          alt=""/>;
     }
     return <span className={classes} style={{
-        width, height
-    }}>
+        width: size,
+        height: size,
+    }} aria-hidden>
         {guildData.name.split(" ").map(it => it[0]).join("")}
     </span>;
 };
