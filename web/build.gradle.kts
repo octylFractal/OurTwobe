@@ -7,7 +7,7 @@ plugins {
 
 license {
     exclude {
-        it.file.startsWith(project.buildDir)
+        it.file.startsWith(project.layout.buildDirectory.get().asFile)
     }
     style.putAt("ts", HeaderStyle.BLOCK_COMMENT)
     style.putAt("tsx", HeaderStyle.BLOCK_COMMENT)
@@ -36,7 +36,7 @@ val compileJs = tasks.register<Exec>("compileJs") {
 
     standardOutput = System.out
     errorOutput = System.err
-    val cmdLine = mutableListOf("npm", "run", "build", "--")
+    val cmdLine = mutableListOf("pnpm", "run", "build", "--")
     val consoleOutput = gradle.startParameter.consoleOutput
     if ((consoleOutput == ConsoleOutput.Auto && System.console() != null) || consoleOutput >= ConsoleOutput.Rich) {
         cmdLine += "--color"
