@@ -199,8 +199,8 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
     });
     return new DataPipe(observable.pipe(
         retry({
-            delay: errors =>
-                errors.pipe(
+            delay: error =>
+                of(error).pipe(
                     tap(err => {
                         if (err !== MANUAL_RESET) {
                             console.error("Hard error from data-pipe, re-auth & restart...", err);
