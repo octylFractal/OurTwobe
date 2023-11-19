@@ -87,26 +87,6 @@ const commonConfig = {
                     {
                         implementation: ImageMinimizerPlugin.sharpMinify,
                     },
-                    {
-                        implementation: ImageMinimizerPlugin.imageminMinify,
-                        options: {
-                            // Lossless optimization with custom option
-                            // Feel free to experiment with options for better result for you
-                            plugins: [
-                                ["optipng", {optimizationLevel: 5}],
-                                [
-                                    "svgo",
-                                    {
-                                        plugins: [
-                                            {
-                                                name: "preset-default",
-                                            },
-                                        ],
-                                    },
-                                ],
-                            ],
-                        },
-                    }
                 ],
             }),
         ],
