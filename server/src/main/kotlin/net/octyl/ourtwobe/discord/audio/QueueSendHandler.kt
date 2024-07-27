@@ -83,16 +83,9 @@ class QueueSendHandler(
                         val skipChannel = skipFlow.produceIn(this)
                         audioFlow.collect {
                             val result = skipChannel.tryReceive()
-                            when {
-                                result.isSuccess -> {
-                                    // the song is over, kill this coroutine
-                                    throw PurposefulCancellationException()
-                                }
-
-                                result.isClosed -> error("canceledChannel should never close")
-                                result.isFailure -> {
-                                    // Fall-through
-                                }
+                            if (result.isSuccess) {
+                                // the song is over, kill this coroutine
+                                throw PurposefulCancellationException()
                             }
                             millis += 20
                             val percent = (100 * millis.toDouble()) / totalMillis
