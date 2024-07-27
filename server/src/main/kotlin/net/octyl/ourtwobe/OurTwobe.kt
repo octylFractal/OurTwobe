@@ -75,7 +75,7 @@ fun main() {
         module(
             DiscordIdAuthorization(config.owner),
             InternalPeeker(jda),
-            GuildManager(config.youTube.cookies, jda),
+            GuildManager(config.youTube, jda),
             YouTubeItemResolver(YouTubeApi(config.youTube.token))
         )
     }

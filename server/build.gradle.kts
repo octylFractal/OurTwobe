@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 
 kotlin {
     target {
@@ -20,13 +20,6 @@ kotlin {
 
 repositories {
     mavenCentral()
-    maven {
-        name = "m2-dv8tion"
-        url = uri("https://m2.dv8tion.net/releases")
-        mavenContent {
-            includeGroupAndSubgroups("net.dv8tion")
-        }
-    }
 }
 
 dependencies {
@@ -74,10 +67,10 @@ dependencies {
     implementation(libs.jda)
 
     val javacppPresets = mapOf(
-        "ffmpeg" to "6.0",
+        "ffmpeg" to "6.1.1",
         "javacpp" to null
     )
-    val javacppVersion = "1.5.9"
+    val javacppVersion = "1.5.10"
     // take desktop platforms, 64 bit
     val wantedPlatforms = listOf("linux", "macosx", "windows").map { "$it-x86_64" }
     for ((name, version) in javacppPresets) {

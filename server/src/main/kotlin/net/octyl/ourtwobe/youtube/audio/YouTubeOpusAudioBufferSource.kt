@@ -31,22 +31,22 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retry
 import mu.KotlinLogging
+import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.ffmpeg.AvioCallbacks
 import net.octyl.ourtwobe.ffmpeg.FFmpegOpusReencoder
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
-import java.nio.file.Path
 
 class YouTubeOpusAudioBufferSource(
-    private val cookiesPath: Path?
+    private val config: Config.YouTube
 ) {
 
     private val logger = KotlinLogging.logger { }
 
     fun provideAudio(id: String, volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return flow {
-            YouTubeDlProcessBinding(cookiesPath, id).use { ytdl ->
+            YouTubeDlProcessBinding(config, id).use { ytdl ->
                 coroutineScope {
                     Channels.newChannel(
                         // Buffer up to 16MB of data, since we don't want to delay downloading for any reason

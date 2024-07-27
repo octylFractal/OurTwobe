@@ -48,20 +48,10 @@ inline fun checkAv(error: Int, message: (error: String) -> String) {
 /**
  * Checked call to [org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin].
  */
-fun avOptSetList(obj: Pointer, name: String, ints: IntArray, search_flags: Int): Int {
+fun avOptSetList(obj: Pointer, name: String, ints: IntArray, searchFlags: Int): Int {
     val intsWithTerm = ints + -1
     return IntPointer(*intsWithTerm).use {
-        av_opt_set_bin(obj, name, BytePointer(it), intsWithTerm.size * Int.SIZE_BYTES, search_flags)
-    }
-}
-
-/**
- * Checked call to [org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin].
- */
-fun avOptSetList(obj: Pointer, name: String, longs: LongArray, search_flags: Int): Int {
-    val longsWithTerm = longs + -1
-    return LongPointer(*longsWithTerm).use {
-        av_opt_set_bin(obj, name, BytePointer(it), longsWithTerm.size * Long.SIZE_BYTES, search_flags)
+        av_opt_set_bin(obj, name, BytePointer(it), intsWithTerm.size * Int.SIZE_BYTES, searchFlags)
     }
 }
 

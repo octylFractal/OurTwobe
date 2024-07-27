@@ -18,13 +18,13 @@
 
 package net.octyl.ourtwobe.api.discorddata
 
-import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel
 
 data class ChannelData(
     val id: String,
     val name: String,
 )
 
-fun VoiceChannel.toChannelData(): ChannelData = ChannelData(
+fun AudioChannel.toChannelData(): ChannelData = ChannelData(
     id, name,
 )

@@ -19,7 +19,6 @@
 package net.octyl.ourtwobe.discord.audio
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onClosed
 import kotlinx.coroutines.coroutineScope
@@ -30,32 +29,30 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
 import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
+import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
-import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 class QueueSendHandler(
-    cookiesPath: Path?,
+    config: Config.YouTube,
     guildId: String,
 ) : AudioSendHandler {
     private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
 
-    private val audioBufferSource = YouTubeOpusAudioBufferSource(cookiesPath)
+    private val audioBufferSource = YouTubeOpusAudioBufferSource(config)
 
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
     private val audioQueue = Channel<ByteBuffer>(capacity = (TimeUnit.MILLISECONDS.toMillis(40L) / 20L).toInt())
 
-    @OptIn(FlowPreview::class)
     fun play(
         playableItems: Flow<PlayableItem>,
         skipFlow: Flow<PlayerCommand.Skip>,

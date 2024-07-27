@@ -34,6 +34,7 @@ data class Config(
     data class YouTube(
         val token: String,
         val cookies: Path?,
+        val forceIpv4: Boolean,
     )
 }
 

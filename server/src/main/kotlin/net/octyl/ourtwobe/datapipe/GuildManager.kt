@@ -21,7 +21,6 @@ package net.octyl.ourtwobe.datapipe
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -32,6 +31,7 @@ import net.dv8tion.jda.api.events.guild.GuildAvailableEvent
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
+import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.api.discorddata.ChannelData
 import net.octyl.ourtwobe.api.discorddata.GuildData
 import net.octyl.ourtwobe.api.discorddata.UserData
@@ -40,11 +40,10 @@ import net.octyl.ourtwobe.api.discorddata.toGuildData
 import net.octyl.ourtwobe.api.discorddata.toUserData
 import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.discord.QueuePlayer
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 class GuildManager(
-    private val cookiesPath: Path?,
+    private val config: Config.YouTube,
     private val jda: JDA,
 ) {
     private val queueScope = CoroutineScope(CoroutineName("QueuePlayer") + Dispatchers.Default)
@@ -55,7 +54,7 @@ class GuildManager(
             guild.audioManager.closeAudioConnection()
             val guildSettingsHolder = GuildSettingsHolder()
             val queueManager = QueueManager()
-            val queuePlayer = QueuePlayer(cookiesPath, guildId, jda, queueManager, guildSettingsHolder)
+            val queuePlayer = QueuePlayer(config, guildId, jda, queueManager, guildSettingsHolder)
             queueScope.launch {
                 queuePlayer.play(
                     guildSettingsHolder.settings

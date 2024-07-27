@@ -49,7 +49,7 @@ sealed class DataPipeEvent {
     /**
      * Clear all queues that are on the client.
      */
-    object ClearQueues : DataPipeEvent()
+    data object ClearQueues : DataPipeEvent()
 
     /**
      * Keep-alive signal.

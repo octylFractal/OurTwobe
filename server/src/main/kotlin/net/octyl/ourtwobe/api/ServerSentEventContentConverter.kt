@@ -22,6 +22,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.ContentConverter
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiationConfig
+import io.ktor.util.cio.ChannelWriteException
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
@@ -55,7 +56,13 @@ class ServerSentEventContentConverter : ContentConverter {
             override suspend fun writeTo(channel: ByteWriteChannel) {
                 value.use {
                     val stream = ServerSentEventStream(channel)
-                    value.flow.cancellable().collect(stream::sendEvent)
+                    value.flow.cancellable().collect {
+                        try {
+                            stream.sendEvent(it)
+                        } catch (ignored: ChannelWriteException) {
+                            // This isn't a problem, it just means the client disconnected
+                        }
+                    }
                 }
             }
         }

@@ -31,21 +31,24 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import mu.KotlinLogging
-import java.nio.file.Path
+import net.octyl.ourtwobe.Config
 
 private val BASE_COMMAND = listOf(
-    "yt-dlp", "--force-ipv4", "-q", "-o", "-", "-f", "bestaudio"
+    "yt-dlp", "-q", "-o", "-", "-f", "bestaudio"
 )
 
-class YouTubeDlProcessBinding(cookiesPath: Path?, id: String) : AutoCloseable {
+class YouTubeDlProcessBinding(config: Config.YouTube, id: String) : AutoCloseable {
     private val logger = KotlinLogging.logger { }
     private val errorJob: Job
     @OptIn(DelicateCoroutinesApi::class)
     val process =
         ProcessBuilder(BASE_COMMAND + ArrayList<String>().apply {
-            cookiesPath?.let {
+            config.cookies?.let {
                 add("--cookies")
                 add(it.toAbsolutePath().toString())
+            }
+            if (config.forceIpv4) {
+                add("--force-ipv4")
             }
             add("https://youtu.be/$id")
         } )

@@ -67,7 +67,7 @@ class ServerSentEventStream(
 }
 
 sealed class Event {
-    object Close : Event()
+    data object Close : Event()
 
     data class Comment(
         val commentText: String

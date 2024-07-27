@@ -19,7 +19,6 @@
 package net.octyl.ourtwobe.ffmpeg
 
 import com.google.common.base.Throwables
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onClosed
 import kotlinx.coroutines.coroutineScope
@@ -233,7 +232,6 @@ class FFmpegOpusReencoder(
             }
     }
 
-    @OptIn(FlowPreview::class)
     private fun readPackets(volumeStateFlow: StateFlow<Double>): Flow<AVFrame> {
         return flow {
             coroutineScope {
@@ -346,7 +344,7 @@ class FFmpegOpusReencoder(
         try {
             closer.close()
         } catch (e: Exception) {
-            Throwables.propagateIfPossible(e, IOException::class.java)
+            Throwables.throwIfInstanceOf(e, IOException::class.java)
             Throwables.throwIfUnchecked(e)
             throw RuntimeException(e)
         }

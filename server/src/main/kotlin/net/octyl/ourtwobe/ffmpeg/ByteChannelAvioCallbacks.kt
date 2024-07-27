@@ -35,9 +35,9 @@ internal object ByteChannelAvioCallbacks {
     private val LOGGER = LoggerFactory.getLogger(ByteChannelAvioCallbacks::class.java)
 
     internal class ReadCallback(private val channel: ReadableByteChannel) : Read_packet_Pointer_BytePointer_int() {
-        override fun call(opaque: Pointer?, buf: BytePointer, buf_size: Int): Int {
+        override fun call(opaque: Pointer?, buf: BytePointer, bufSize: Int): Int {
             return try {
-                val read = channel.read(buf.limit(buf_size.toLong()).asBuffer())
+                val read = channel.read(buf.limit(bufSize.toLong()).asBuffer())
                 if (read == -1) {
                     AVERROR_EOF
                 } else read
@@ -49,9 +49,9 @@ internal object ByteChannelAvioCallbacks {
     }
 
     internal class WriteCallback(private val channel: WritableByteChannel) : Write_packet_Pointer_BytePointer_int() {
-        override fun call(opaque: Pointer?, buf: BytePointer, buf_size: Int): Int {
+        override fun call(opaque: Pointer?, buf: BytePointer, bufSize: Int): Int {
             return try {
-                channel.write(buf.limit(buf_size.toLong()).asBuffer().asReadOnlyBuffer())
+                channel.write(buf.limit(bufSize.toLong()).asBuffer().asReadOnlyBuffer())
             } catch (t: Throwable) {
                 LOGGER.warn("Error writing to channel", t)
                 AVERROR_UNKNOWN

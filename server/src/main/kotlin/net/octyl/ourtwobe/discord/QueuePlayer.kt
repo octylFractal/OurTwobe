@@ -18,7 +18,6 @@
 
 package net.octyl.ourtwobe.discord
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -36,22 +35,21 @@ import kotlinx.coroutines.supervisorScope
 import mu.KotlinLogging
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.audio.SpeakingMode
-import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel
 import net.dv8tion.jda.api.events.guild.voice.GenericGuildVoiceEvent
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
+import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
 import net.octyl.ourtwobe.datapipe.GuildSettingsHolder
 import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.datapipe.QueueManager
 import net.octyl.ourtwobe.discord.audio.QueueSendHandler
 import net.octyl.ourtwobe.util.exhaustive
-import java.nio.file.Path
 import kotlin.coroutines.coroutineContext
 
 class QueuePlayer(
-    cookiesPath: Path?,
+    config: Config.YouTube,
     private val guildId: String,
     private val jda: JDA,
     private val queueManager: QueueManager,
@@ -62,30 +60,18 @@ class QueuePlayer(
     private val _events = MutableStateFlow<DataPipeEvent.ProgressItem?>(null)
     val events: StateFlow<DataPipeEvent.ProgressItem?> = _events
 
-    private val sendHandler = QueueSendHandler(cookiesPath, guildId)
+    private val sendHandler = QueueSendHandler(config, guildId)
 
     init {
         jda.addEventListener(object {
             @SubscribeEvent
-            fun onVoiceLeave(event: GuildVoiceLeaveEvent) {
-                if (event.guild.id != guildId) {
-                    return
-                }
-                if (event.member.user.id == jda.selfUser.id && event.channelJoined == null) {
-                    guildSettingsHolder.updateSettings {
-                        it.copy(activeChannel = null)
-                    }
-                }
-            }
-
-            @SubscribeEvent
-            fun onVoiceMove(event: GuildVoiceMoveEvent) {
+            fun onVoiceLeave(event: GuildVoiceUpdateEvent) {
                 if (event.guild.id != guildId) {
                     return
                 }
                 if (event.member.user.id == jda.selfUser.id) {
                     guildSettingsHolder.updateSettings {
-                        it.copy(activeChannel = event.channelJoined.id)
+                        it.copy(activeChannel = event.channelJoined?.id)
                     }
                 }
             }
@@ -138,7 +124,7 @@ class QueuePlayer(
     }
 
     private suspend fun drainQueue(
-        channel: VoiceChannel,
+        channel: AudioChannel,
         cancelFlow: Flow<PlayerCommand.Skip>,
         volumeStateFlow: StateFlow<Double>
     ) {
@@ -158,8 +144,7 @@ class QueuePlayer(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun removeNextItem(channel: VoiceChannel): PlayableItem {
+    private suspend fun removeNextItem(channel: AudioChannel): PlayableItem {
         return queueManager.remove {
             val updates = channelFlow {
                 send(Unit)
@@ -196,7 +181,7 @@ sealed class PlayerCommand {
      *
      * This will cancel the currently playing song.
      */
-    object Disconnect : PlayerCommand()
+    data object Disconnect : PlayerCommand()
 
     data class Skip(val itemId: String) : PlayerCommand()
 }

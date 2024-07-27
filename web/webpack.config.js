@@ -147,10 +147,16 @@ module.exports = (env, argv) => {
             hot: true,
             historyApiFallback: true,
             compress: false,
-            proxy: {
-                '/api': {
-                    target: "http://127.0.0.1:13445",
-                    pathRewrite: {'^/api': ''}
+            proxy: [{
+                context: ['/api'],
+                target: "http://127.0.0.1:13445",
+                pathRewrite: {'^/api': ''},
+            }],
+            client: {
+                overlay: {
+                    errors: true,
+                    warnings: false,
+                    runtimeErrors: true,
                 },
             },
         },

@@ -19,7 +19,7 @@
 import {createSelector} from "@reduxjs/toolkit";
 import {type OutputSelectorFields, type Selector} from "reselect";
 
-export type SimpleSelector<S, R> = Selector<S, R> & OutputSelectorFields<(s: S) => R, unknown>;
+export type SimpleSelector<S, R> = Selector<S, R> & OutputSelectorFields<[(s: S) => R], unknown>;
 
 export function createSimpleSelector<S, R>(
     selector: (state: S) => R

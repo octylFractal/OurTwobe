@@ -19,7 +19,6 @@
 package net.octyl.ourtwobe.datapipe
 
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import net.octyl.ourtwobe.discord.QueuePlayer
