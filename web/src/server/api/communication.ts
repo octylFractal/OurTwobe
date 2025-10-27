@@ -44,8 +44,12 @@ export class OurTwobeCommApi extends ApiBase {
         return this.doRequest("put", `/guilds/${this.guildId}`, {data: guildUpdate});
     }
 
-    submitItem(item: QueueSubmit): Promise<void> {
-        return this.doRequest("post", `/guilds/${this.guildId}/queue`, {data: item});
+    submitYouTubeItems(item: QueueSubmit): Promise<void> {
+        return this.doRequest("post", `/guilds/${this.guildId}/queue/youtube`, {data: item});
+    }
+
+    submitFileItems(form: FormData): Promise<void> {
+        return this.doRequest("post", `/guilds/${this.guildId}/queue/file`, {data: form});
     }
 
     removeItem(request: ItemRemove): Promise<void> {

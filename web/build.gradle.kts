@@ -42,6 +42,7 @@ val compileJs = tasks.register<Exec>("compileJs") {
         cmdLine += "--color"
     }
     commandLine(cmdLine)
+    workingDir(project.layout.projectDirectory)
 }
 
 tasks.named("assemble") {

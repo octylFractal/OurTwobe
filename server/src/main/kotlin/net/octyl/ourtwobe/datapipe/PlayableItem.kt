@@ -18,14 +18,22 @@
 
 package net.octyl.ourtwobe.datapipe
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.google.common.io.BaseEncoding
+import java.awt.image.BufferedImage
+import java.io.StringWriter
+import java.nio.ByteBuffer
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import javax.imageio.ImageIO
 
 data class PlayableItem(
-    val youtubeId: String,
+    val contentKey: ContentKey,
     val title: String,
-    val thumbnail: Thumbnail,
+    val thumbnail: Thumbnail?,
     val duration: Duration,
     val id: String = UUID.randomUUID().toString(),
     val submissionTime: Instant = Instant.now(),
@@ -37,4 +45,45 @@ data class Thumbnail(
     val width: Int,
     val height: Int,
     val url: String,
+) {
+    companion object {
+        fun fromBufferedImage(image: BufferedImage): Thumbnail {
+            val base64 = StringWriter()
+            BaseEncoding.base64().encodingStream(base64).use { out ->
+                ImageIO.write(image, "png", out)
+            }
+            return Thumbnail(
+                width = image.width,
+                height = image.height,
+                url = "data:image/png;base64,$base64",
+            )
+        }
+    }
+}
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type",
 )
+@JsonSubTypes(
+    JsonSubTypes.Type(YouTubeContentKey::class, name = "youtube"),
+    JsonSubTypes.Type(FileContentKey::class, name = "file"),
+)
+interface ContentKey {
+    fun describe(): String
+}
+
+data class YouTubeContentKey(
+    val videoId: String,
+) : ContentKey {
+    override fun describe() = "youtu.be/$videoId"
+}
+
+class FileContentKey(
+    val filename: String,
+    @JsonIgnore
+    val fileContent: ByteBuffer,
+) : ContentKey {
+    override fun describe() = "file://$filename"
+}

@@ -40,7 +40,7 @@ class ServerSentEventContentConverter : ContentConverter {
         return null
     }
 
-    override suspend fun serializeNullable(
+    override suspend fun serialize(
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,
@@ -59,7 +59,7 @@ class ServerSentEventContentConverter : ContentConverter {
                     value.flow.cancellable().collect {
                         try {
                             stream.sendEvent(it)
-                        } catch (ignored: ChannelWriteException) {
+                        } catch (_: ChannelWriteException) {
                             // This isn't a problem, it just means the client disconnected
                         }
                     }
@@ -80,7 +80,7 @@ class EventFlow(
             for (listener in closeListeners) {
                 try {
                     listener()
-                } catch (ignored: Throwable) {
+                } catch (_: Throwable) {
                 }
             }
             closeListeners.clear()

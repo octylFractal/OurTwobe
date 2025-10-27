@@ -18,15 +18,15 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import java.util.ArrayDeque
 import java.util.Deque
-import java.util.LinkedList
 
 /**
  * [AutoCloseable]-compatible closer.
  */
 class AutoCloser : AutoCloseable {
     // LIFO queue, the last thing registered is the first thing closed
-    private val closeables: Deque<AutoCloseable> = LinkedList()
+    private val closeables: Deque<AutoCloseable> = ArrayDeque()
     fun <C : AutoCloseable?> register(autoCloseable: C): C {
         if (autoCloseable != null) {
             closeables.addFirst(autoCloseable)

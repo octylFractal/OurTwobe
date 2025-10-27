@@ -18,6 +18,9 @@
 
 package net.octyl.ourtwobe.api
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Session(
     val userId: String,
 )

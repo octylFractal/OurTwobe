@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.selects.select
+import mu.KotlinLogging
 import net.octyl.ourtwobe.api.ApiError
 import net.octyl.ourtwobe.api.ApiErrorException
 import net.octyl.ourtwobe.api.Authorization
@@ -36,6 +37,8 @@ import net.octyl.ourtwobe.util.RWLock
 import net.octyl.ourtwobe.util.read
 import net.octyl.ourtwobe.util.write
 import java.util.TreeSet
+
+private val logger = KotlinLogging.logger { }
 
 class QueueManager {
 
@@ -51,6 +54,7 @@ class QueueManager {
     suspend fun insert(owner: String, item: PlayableItem) {
         rwLock.write {
             queues.put(owner, item)
+            logger.info { "$owner queued ${item.title}" }
             _events.emit(DataPipeEvent.QueueItem(owner, item))
             awaitingNewItem.forEach {
                 it.complete(Unit)
@@ -102,7 +106,7 @@ class QueueManager {
                     }
                 } ?: break
                 // wait to be signalled
-                select<Unit> {
+                select {
                     ownerChannel.onReceive {
                         deferred.cancel()
                         owners = it

@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -46,7 +47,6 @@ import net.octyl.ourtwobe.datapipe.PlayableItem
 import net.octyl.ourtwobe.datapipe.QueueManager
 import net.octyl.ourtwobe.discord.audio.QueueSendHandler
 import net.octyl.ourtwobe.util.exhaustive
-import kotlin.coroutines.coroutineContext
 
 class QueuePlayer(
     config: Config.YouTube,
@@ -129,13 +129,13 @@ class QueuePlayer(
         volumeStateFlow: StateFlow<Double>
     ) {
         val itemFlow = flow {
-            while (coroutineContext.isActive) {
+            while (currentCoroutineContext().isActive) {
                 val nextItem = removeNextItem(channel)
-                logger.info("Preparing '${nextItem.title}' (${nextItem.youtubeId})")
+                logger.info("Preparing '${nextItem.title}' (${nextItem.contentKey.describe()})")
                 try {
                         emit(nextItem)
                 } catch (e: Throwable) {
-                    logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.youtubeId})" }
+                    logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.contentKey.describe()})" }
                 }
             }
         }

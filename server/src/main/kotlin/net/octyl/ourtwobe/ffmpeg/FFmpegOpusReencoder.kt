@@ -68,7 +68,6 @@ import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_frame_free
 import org.bytedeco.ffmpeg.global.avutil.av_frame_get_buffer
 import org.bytedeco.ffmpeg.global.avutil.av_frame_make_writable
-import org.bytedeco.ffmpeg.global.avutil.av_frame_ref
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.opus.Opus.OPUS_APPLICATION_AUDIO
@@ -210,12 +209,6 @@ class FFmpegOpusReencoder(
 
     fun recode(volumeStateFlow: StateFlow<Double>): Flow<ByteBuffer> {
         return readPackets(volumeStateFlow)
-            .map {
-                // we must copy the frame before buffering to avoid use-after-free
-                val frame = av_frame_alloc()
-                av_frame_ref(frame, it)
-                frame
-            }
             .buffer(capacity = 4)
             .transform {
                 try {
@@ -261,18 +254,24 @@ class FFmpegOpusReencoder(
                                         .onClosed { if (it != null) throw it }
                                         .getOrNull()?.let { newResampler ->
                                             // resampler changed since frame push, clear it out
-                                            emitAll(resampler.pushFinalFrame(frame.pts()))
+                                            for (frame in resampler.pushFinalFrame(frame.pts())) {
+                                                emit(frame)
+                                            }
                                             resampler.close()
                                             resampler = newResampler
                                         } ?: break
                                 }
-                                emitAll(resampler.pushFrame(frame))
+                                for (frame in resampler.pushFrame(frame)) {
+                                    emit(frame)
+                                }
                             }
                         } finally {
                             av_packet_unref(packet)
                         }
                     }
-                    emitAll(resampler.pushFinalFrame(frame.pts()))
+                    for (frame in resampler.pushFinalFrame(frame.pts())) {
+                        emit(frame)
+                    }
                 } finally {
                     // Kill channel, we stopped listening
                     resamplerChannel.cancel()

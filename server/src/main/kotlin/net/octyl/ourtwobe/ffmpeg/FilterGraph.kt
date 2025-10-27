@@ -20,6 +20,7 @@ package net.octyl.ourtwobe.ffmpeg
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import mu.KotlinLogging
 import org.bytedeco.ffmpeg.avfilter.AVFilterContext
 import org.bytedeco.ffmpeg.avfilter.AVFilterGraph
 import org.bytedeco.ffmpeg.avutil.AVDictionary
@@ -134,7 +135,7 @@ abstract class FilterGraph(
     /**
      * Push a single frame into the graph, and get the [0, N] frames it produces.
      */
-    fun pushFrame(frame: AVFrame, flags: Int = 0): Flow<AVFrame> {
+    fun pushFrame(frame: AVFrame, flags: Int = 0): List<AVFrame> {
         val ourFrame = av_frame_clone(frame) ?: error("Unable to clone frame")
         checkAv(av_buffersrc_add_frame_flags(bufferCtx, ourFrame, flags)) {
             av_frame_unref(frame)
@@ -145,7 +146,7 @@ abstract class FilterGraph(
         return resultFrameSequence()
     }
 
-    fun pushFinalFrame(pts: Long, flags: Int = 0): Flow<AVFrame> {
+    fun pushFinalFrame(pts: Long, flags: Int = 0): List<AVFrame> {
         checkAv(av_buffersrc_close(bufferCtx, pts, flags)) {
             "Unable to push final frame into graph"
         }
@@ -153,19 +154,20 @@ abstract class FilterGraph(
         return resultFrameSequence()
     }
 
-    private fun resultFrameSequence(): Flow<AVFrame> {
-        return flow {
+    private fun resultFrameSequence(): List<AVFrame> {
+        return sequence {
             var error: Int
             while (true) {
                 error = av_buffersink_get_frame(bufferSinkCtx, outputFrame)
                 when {
-                    error == AVERROR_EAGAIN() || error == AVERROR_EOF -> return@flow
+                    error == AVERROR_EAGAIN() || error == AVERROR_EOF -> return@sequence
                     error < 0 -> error("Error filtering frame: ${avErr2Str(error)}")
                 }
-                emit(outputFrame)
+                val cloned = av_frame_clone(outputFrame) ?: error("Unable to clone output frame")
+                yield(cloned)
                 av_frame_unref(outputFrame)
             }
-        }
+        }.toList()
     }
 
     override fun close() {

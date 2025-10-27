@@ -18,7 +18,7 @@
 
 import {Button, Card, ProgressBar} from "react-bootstrap";
 import React from "react";
-import {NO_PLAYING_ITEM, type PlayableItem} from "../server/api/data-pipe";
+import {describeContentKey, ERROR_THUMBNAIL, NO_PLAYING_ITEM, type PlayableItem} from "../server/api/data-pipe";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {CommApiContext} from "./CommApiContext";
 
@@ -36,15 +36,16 @@ export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progres
         ? {label: "Remove", action: () => void commApi.removeItem({itemId: item.id})}
         : {label: "Skip", action: () => void commApi.skipItem({itemId: item.id})};
 
+    const thumbnail = item.thumbnail || ERROR_THUMBNAIL;
     return <Card className="align-items-center">
         <Card.Img variant="top"
                   className="border border-black box-sizing-content-box"
-                  src={item.thumbnail.url}
-                  width={item.thumbnail.width}
-                  height={item.thumbnail.height}
+                  src={thumbnail.url}
+                  width={thumbnail.width}
+                  height={thumbnail.height}
                   style={{
-                      width: item.thumbnail.width,
-                      height: item.thumbnail.height,
+                      width: thumbnail.width,
+                      height: thumbnail.height,
                   }}
                   alt="Thumbnail"/>
         {typeof progress !== "undefined" &&
@@ -58,8 +59,8 @@ export const PlayableItemCard: React.FC<PlayableItemCardProps> = ({item, progres
                 </div>
             </Card.Body>
         }
-        <Card.Body style={{maxWidth: item.thumbnail.width}}>
-            <Card.Text className="text-center">{item.title}<br/>({item.youtubeId})</Card.Text>
+        <Card.Body style={{maxWidth: thumbnail.width}}>
+            <Card.Text className="text-center">{item.title}<br/>({describeContentKey(item.contentKey)})</Card.Text>
         </Card.Body>
         <Card.Body className="p-0 w-100">
             <Button

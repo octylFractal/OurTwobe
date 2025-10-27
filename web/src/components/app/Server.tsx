@@ -26,6 +26,7 @@ import {NO_PLAYING_ITEM} from "../../server/api/data-pipe";
 import {Comparators} from "../../util/compare";
 import {requireNonNull} from "../../utils";
 import {createSimpleSelector} from "../../redux/selectors";
+import {DragDropSubmission} from "../DragDropSubmission";
 
 const Server: React.FC = () => {
     const {guildId} = useParams<{ guildId: string }>();
@@ -40,21 +41,23 @@ const Server: React.FC = () => {
         [guildId]
     );
     const nowPlaying = useSelector(nowPlayingSelector);
-    return <div className="d-flex flex-column">
-        <div className="d-inline-flex flex-column align-items-center">
-            <p>Now playing:</p>
-            <PlayableItemCard item={nowPlaying.item} progress={nowPlaying.progress}/>
+    return <DragDropSubmission>
+        <div className="d-flex flex-column">
+            <div className="d-inline-flex flex-column align-items-center">
+                <p>Now playing:</p>
+                <PlayableItemCard item={nowPlaying.item} progress={nowPlaying.progress}/>
+            </div>
+            <div className="my-3 border-bottom border-light"/>
+            <div className="d-flex flex-row flex-grow-1">
+                {Object.entries(queues)
+                    .filter(([, queue]) => queue.items.length > 0)
+                    .sort(Comparators.comparing(([, q]) => q.items[0].submissionTime, Comparators.NUMBER))
+                    .map(([key, queue]) => {
+                        return <UserIdQueue key={key} ownerId={key} items={queue.items}/>;
+                    })}
+            </div>
         </div>
-        <div className="my-3 border-bottom border-light"/>
-        <div className="d-flex flex-row flex-grow-1">
-            {Object.entries(queues)
-                .filter(([, queue]) => queue.items.length > 0)
-                .sort(Comparators.comparing(([, q]) => q.items[0].submissionTime, Comparators.NUMBER))
-                .map(([key, queue]) => {
-                return <UserIdQueue key={key} ownerId={key} items={queue.items}/>;
-            })}
-        </div>
-    </div>;
+    </DragDropSubmission>;
 };
 
 export default Server;

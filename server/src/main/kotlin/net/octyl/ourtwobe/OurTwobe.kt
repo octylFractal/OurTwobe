@@ -36,6 +36,7 @@ import net.octyl.ourtwobe.api.module
 import net.octyl.ourtwobe.datapipe.GuildManager
 import net.octyl.ourtwobe.discord.DiscordIdAuthorization
 import net.octyl.ourtwobe.discord.audio.NanoSendSystem
+import net.octyl.ourtwobe.files.FileItemResolver
 import net.octyl.ourtwobe.util.OptimizedAnnotatedEventManager
 import net.octyl.ourtwobe.youtube.api.YouTubeApi
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
@@ -71,12 +72,13 @@ fun main() {
         .setAudioSendFactory(::NanoSendSystem)
         .build()
 
-    val embeddedServer: NettyApplicationEngine = embeddedServer(Netty, port = 13445, host = "127.0.0.1") {
+    val embeddedServer = embeddedServer(Netty, port = 13445, host = "127.0.0.1") {
         module(
             DiscordIdAuthorization(config.owner),
             InternalPeeker(jda),
             GuildManager(config.youTube, jda),
-            YouTubeItemResolver(YouTubeApi(config.youTube.token))
+            YouTubeItemResolver(YouTubeApi(config.youTube.token)),
+            FileItemResolver(),
         )
     }
     embeddedServer.start()

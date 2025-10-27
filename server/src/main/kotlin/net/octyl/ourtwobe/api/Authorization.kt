@@ -18,10 +18,9 @@
 
 package net.octyl.ourtwobe.api
 
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.call
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RouteSelector
 import io.ktor.server.routing.RouteSelectorEvaluation
@@ -30,6 +29,22 @@ import io.ktor.server.routing.RoutingResolveContext
 interface Authorization {
     fun isAdmin(user: String): Boolean
     fun canRemoveFrom(user: String, queueOwner: String): Boolean
+}
+
+class RequireAdminConfig {
+    lateinit var authorization: Authorization
+    lateinit var userIdExtractor: ((call: ApplicationCall) -> String)
+}
+
+val RequireAdminPlugin = createRouteScopedPlugin("RequireAdmin", ::RequireAdminConfig) {
+    onCall {
+        if (!pluginConfig.authorization.isAdmin(pluginConfig.userIdExtractor(it))) {
+            throw ApiErrorException(
+                ApiError("user.not.admin", "You are not an admin of OurTwobe."),
+                HttpStatusCode.Forbidden
+            )
+        }
+    }
 }
 
 /**
@@ -42,14 +57,9 @@ fun Route.requireAdmin(
 ): Route {
     val route = createChild(AuthorizationRouteSelector(authorization.javaClass.simpleName))
 
-    route.intercept(ApplicationCallPipeline.Call) {
-        if (!authorization.isAdmin(userIdExtractor(call))) {
-            throw ApiErrorException(
-                ApiError("user.not.admin", "You are not an admin of OurTwobe."),
-                HttpStatusCode.Forbidden
-            )
-        }
-        proceed()
+    route.install(RequireAdminPlugin) {
+        this.authorization = authorization
+        this.userIdExtractor = userIdExtractor
     }
 
     route.build()
@@ -57,7 +67,7 @@ fun Route.requireAdmin(
 }
 
 private class AuthorizationRouteSelector(val authorizationName: String) : RouteSelector() {
-    override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
+    override suspend fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         return RouteSelectorEvaluation.Constant
     }
 

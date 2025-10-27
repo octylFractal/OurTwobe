@@ -51,16 +51,18 @@ export interface ProgressItem {
     readonly progress: number
 }
 
+export const ERROR_THUMBNAIL = {
+    url: new URL("../../app/not-playing.png", import.meta.url).toString(),
+    width: 320,
+    height: 180,
+};
+
 export const NO_PLAYING_ITEM: ProgressItem = {
     type: "progressItem",
     item: {
-        youtubeId: "N/A",
+        contentKey: { type: 'nothing' },
         title: "Nothing",
-        thumbnail: {
-            url: new URL("../../app/not-playing.png", import.meta.url).toString(),
-            width: 320,
-            height: 180,
-        },
+        thumbnail: ERROR_THUMBNAIL,
         duration: 0,
         id: "not any in-use ID",
         submissionTime: 0,
@@ -94,12 +96,40 @@ const ALL_TYPES: Set<DataPipeEvent["type"]> = runBlock(() => {
 });
 
 export interface PlayableItem {
-    readonly youtubeId: string
+    readonly contentKey: ContentKey
     readonly title: string
-    readonly thumbnail: Thumbnail
+    readonly thumbnail?: Thumbnail
     readonly duration: number
     readonly id: string
     readonly submissionTime: number
+}
+
+export type ContentKey = YouTubeContentKey | FileContentKey | NothingContentKey;
+
+export function describeContentKey(key: ContentKey): string {
+    switch (key.type) {
+        case 'youtube':
+            return `https://youtu.be/${key.youtubeId}`;
+        case 'file':
+            return `Uploaded File '${key.filename}'`;
+        case 'nothing':
+            return `No Content`;
+    }
+}
+
+export interface YouTubeContentKey {
+    readonly type: 'youtube'
+    readonly youtubeId: string
+}
+
+export interface FileContentKey {
+    readonly type: 'file'
+    readonly filename: string
+}
+
+// This is client-side only, to represent "no item"
+export interface NothingContentKey {
+    readonly type: 'nothing'
 }
 
 export interface Thumbnail {

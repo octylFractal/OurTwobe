@@ -35,8 +35,11 @@ import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
+import net.octyl.ourtwobe.datapipe.FileContentKey
 import net.octyl.ourtwobe.datapipe.PlayableItem
+import net.octyl.ourtwobe.datapipe.YouTubeContentKey
 import net.octyl.ourtwobe.discord.PlayerCommand
+import net.octyl.ourtwobe.files.FileOpusAudioBufferSource
 import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
@@ -47,7 +50,8 @@ class QueueSendHandler(
 ) : AudioSendHandler {
     private val logger = KotlinLogging.logger("${javaClass.name}.$guildId")
 
-    private val audioBufferSource = YouTubeOpusAudioBufferSource(config)
+    private val ytBufferSource = YouTubeOpusAudioBufferSource(config)
+    private val fileBufferSource = FileOpusAudioBufferSource()
 
     // small hand-off queue that keeps progress close to what it actually is,
     // but allows for some lee-way between the two
@@ -62,17 +66,25 @@ class QueueSendHandler(
             coroutineScope {
                 // Prepare hot flows so the audio is ready ASAP
                 playableItems.collect {
-                    emit(
-                        it to audioBufferSource.provideAudio(it.youtubeId, volumeStateFlow)
-                            .produceIn(this).consumeAsFlow()
-                    )
+                    val audioFlow = when (it.contentKey) {
+                        is YouTubeContentKey -> ytBufferSource.provideAudio(
+                            it.contentKey.videoId,
+                            volumeStateFlow
+                        )
+                        is FileContentKey -> fileBufferSource.provideAudio(
+                            it.contentKey,
+                            volumeStateFlow
+                        )
+                        else -> throw IllegalArgumentException("Unsupported content key: ${it.contentKey}")
+                    }
+                    emit(it to audioFlow.produceIn(this).consumeAsFlow())
                 }
             }
         }
             // only keep 1 song ready
             .buffer(Channel.RENDEZVOUS)
             .transform { (playableItem, audioFlow) ->
-                logger.info("Playing '${playableItem.title}' (${playableItem.youtubeId})")
+                logger.info("Playing '${playableItem.title}' (${playableItem.contentKey.describe()})")
                 var base = DataPipeEvent.ProgressItem(playableItem, 0.0)
                 try {
                     // number of milliseconds needed for an 0.01% increase
@@ -102,12 +114,12 @@ class QueueSendHandler(
                         }
                         skipChannel.cancel()
                     }
-                } catch (e: PurposefulCancellationException) {
+                } catch (_: PurposefulCancellationException) {
                     // no big deal
-                    logger.info("Skipped '${playableItem.title}' (${playableItem.youtubeId})")
+                    logger.info("Skipped '${playableItem.title}' (${playableItem.contentKey.describe()})")
                 } finally {
                     emit(base.copy(progress = 100.0) to null)
-                    logger.info("Finished '${playableItem.title}' (${playableItem.youtubeId})")
+                    logger.info("Finished '${playableItem.title}' (${playableItem.contentKey.describe()})")
                 }
             }
             // store 0.5s worth of audio in queue

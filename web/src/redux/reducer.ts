@@ -136,6 +136,9 @@ const {actions: guildState, reducer: guildStateSlice} = createSlice({
             guildState.playing = undefined;
         },
         updatePlayingItem(state, {payload}: GuildPayloadAction<ProgressItem>): void {
+            if (!(payload.guildId in state)) {
+                return;
+            }
             if (state[payload.guildId].playing?.item?.id !== payload.item.id) {
                 // newly playing, de-queue
                 const queues = state[payload.guildId].queues;

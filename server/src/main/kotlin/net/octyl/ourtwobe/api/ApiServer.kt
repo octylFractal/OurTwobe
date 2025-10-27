@@ -23,24 +23,25 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import io.ktor.client.utils.EmptyContent
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
-import io.ktor.server.auth.Principal
 import io.ktor.server.auth.UnauthorizedResponse
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.basic
 import io.ktor.server.http.content.HttpStatusCodeContent
 import io.ktor.server.plugins.autohead.AutoHeadResponse
-import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.compression.Compression
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.path
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.delete
@@ -54,8 +55,12 @@ import io.ktor.server.sessions.cookie
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.cio.ChannelWriteException
+import io.ktor.utils.io.core.remaining
+import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.io.readByteArray
 import mu.KotlinLogging
 import net.octyl.ourtwobe.InternalPeeker
 import net.octyl.ourtwobe.MODULES
@@ -65,17 +70,23 @@ import net.octyl.ourtwobe.datapipe.GuildSettings
 import net.octyl.ourtwobe.datapipe.GuildState
 import net.octyl.ourtwobe.discord.DiscordApi
 import net.octyl.ourtwobe.discord.PlayerCommand
+import net.octyl.ourtwobe.files.FileItemResolver
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
 import org.slf4j.event.Level
+import java.nio.ByteBuffer
 import java.time.Duration
 
 private val logger = KotlinLogging.logger { }
+
+// Limit uploads to 1GB, all audio, even ridiculous ten hour mixes should be under this
+private const val MAX_MULTIPART_SIZE = 1L * 1024L * 1024L * 1024L
 
 fun Application.module(
     authorization: Authorization,
     internalPeeker: InternalPeeker,
     guildManager: GuildManager,
-    youTubeItemResolver: YouTubeItemResolver
+    youTubeItemResolver: YouTubeItemResolver,
+    fileItemResolver: FileItemResolver,
 ) {
     val api = DiscordApi()
 
@@ -141,6 +152,11 @@ fun Application.module(
             )
         }
         exception<Throwable> { call, cause ->
+            if (cause is ChannelWriteException) {
+                // Client disconnected, not a server issue
+                logger.debug { "Client disconnected from ${call.request.path()}" }
+                return@exception
+            }
             logger.warn(cause) { "Caught exception in OurTwobe API handler" }
             call.respond(
                 HttpStatusCode.InternalServerError,
@@ -262,14 +278,37 @@ fun Application.module(
                     call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
                 }
                 route("/queue") {
-                    post {
+                    post("/youtube") {
                         val userId = extractUserId(call)
                         val body = call.receive<QueueSubmit>()
                         val (_, state) = call.getGuildState()
 
                         youTubeItemResolver.resolveItems(body.url).collect {
-                            logger.info { "$userId queued ${it.title}" }
                             state.queueManager.insert(userId, it)
+                        }
+                        call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
+                    }
+                    post("/file") {
+                        val userId = extractUserId(call)
+                        val (_, state) = call.getGuildState()
+                        call.receiveMultipart(MAX_MULTIPART_SIZE).forEachPart {
+                            val (filename, fileContent) = try {
+                                if (it !is PartData.FileItem) {
+                                    throw ApiErrorException(
+                                        ApiError("upload.invalid", "Only file parts are supported"),
+                                        HttpStatusCode.BadRequest
+                                    )
+                                }
+                                val filename = it.originalFileName ?: throw ApiErrorException(
+                                    ApiError("upload.noname", "Uploaded file must have a name"),
+                                    HttpStatusCode.BadRequest
+                                )
+                                filename to ByteBuffer.wrap(it.provider().readBuffer().readByteArray())
+                            } finally {
+                                it.dispose()
+                            }
+                            val item = fileItemResolver.resolveItem(filename, fileContent)
+                            state.queueManager.insert(userId, item)
                         }
                         call.respond(HttpStatusCodeContent(HttpStatusCode.NoContent))
                     }
@@ -288,6 +327,6 @@ fun Application.module(
     }
 }
 
-object Authenticated : Principal
+object Authenticated
 
 private fun ApplicationCall.requireSession(): Session = sessions.get() ?: error("No session available!")

@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import net.octyl.ourtwobe.datapipe.PlayableItem
+import net.octyl.ourtwobe.datapipe.YouTubeContentKey
 import net.octyl.ourtwobe.youtube.api.YouTubeApi
 
 class YouTubeItemResolver(
@@ -33,7 +34,7 @@ class YouTubeItemResolver(
         val videoIds = flow {
             val parsed = try {
                 Url(url)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 throw InvalidSubmission(url)
             }
             when (parsed.host) {
@@ -59,7 +60,7 @@ class YouTubeItemResolver(
         }
         return api.getVideoInfo(videoIds).map { info ->
             PlayableItem(
-                info.id,
+                YouTubeContentKey(info.id),
                 info.title,
                 info.thumbnail,
                 info.duration,

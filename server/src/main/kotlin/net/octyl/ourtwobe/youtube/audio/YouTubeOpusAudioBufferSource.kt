@@ -19,6 +19,7 @@
 package net.octyl.ourtwobe.youtube.audio
 
 import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.writeFully
 import io.ktor.utils.io.writer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,7 @@ private fun CoroutineScope.hotBuffer(stream: InputStream, bufferSize: Int): Inpu
             if (read == 0) {
                 break
             }
-            channel.writeFully(buffer, 0, read)
+            channel.writeFully(buffer, endIndex = read)
         }
     }
     return writer.channel.toInputStream(parent = this.coroutineContext[Job])

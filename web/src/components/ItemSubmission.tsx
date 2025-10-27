@@ -36,7 +36,7 @@ export const ItemSubmission: React.FC = () => {
         }
         setError(false);
         setDisabled(true);
-        commApi.submitItem({
+        commApi.submitYouTubeItems({
             url: value,
         })
             .then(
@@ -56,7 +56,8 @@ export const ItemSubmission: React.FC = () => {
         <Form.Group as={Row} className="align-items-center" controlId={idId}>
             <Form.Label column className="text-center">
                 Submit an item<br/>
-                <small>(video or playlist!)</small>
+                <small>(video or playlist!)</small><br/>
+                <small>(or even just drop files below!)</small>
             </Form.Label>
             <Col>
                 <Form.Control

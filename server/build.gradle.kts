@@ -2,21 +2,10 @@ plugins {
     application
     alias(libs.plugins.licenser)
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-
-kotlin {
-    target {
-        compilations.configureEach {
-            kotlinOptions {
-                freeCompilerArgs = listOf(
-                    "-opt-in=kotlin.RequiresOptIn"
-                )
-            }
-        }
-    }
-}
 
 repositories {
     mavenCentral()
@@ -66,25 +55,7 @@ dependencies {
 
     implementation(libs.jda)
 
-    val javacppPresets = mapOf(
-        "ffmpeg" to "6.1.1",
-        "javacpp" to null
-    )
-    val javacppVersion = "1.5.10"
-    // take desktop platforms, 64 bit
-    val wantedPlatforms = listOf("linux", "macosx", "windows").map { "$it-x86_64" }
-    for ((name, version) in javacppPresets) {
-        val fullVersion = when (version) {
-            null -> javacppVersion
-            else -> "$version-$javacppVersion"
-        }
-        implementation("org.bytedeco:$name:$fullVersion")
-        for (platform in wantedPlatforms) {
-            implementation("org.bytedeco:$name:$fullVersion:$platform")
-            implementation("org.bytedeco:$name:$fullVersion:$platform")
-        }
-    }
-
+    implementation(libs.javacpp.ffmpeg)
 
     implementation(libs.greenishJungle)
 

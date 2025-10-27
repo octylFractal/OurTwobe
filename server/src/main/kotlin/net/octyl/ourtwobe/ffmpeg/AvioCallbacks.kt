@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import kotlinx.io.Buffer
 import org.bytedeco.ffmpeg.avformat.AVIOContext
 import org.bytedeco.ffmpeg.avformat.Read_packet_Pointer_BytePointer_int
 import org.bytedeco.ffmpeg.avformat.Seek_Pointer_long_int
@@ -26,6 +27,7 @@ import org.bytedeco.ffmpeg.global.avformat
 import org.bytedeco.ffmpeg.global.avutil
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.javacpp.Pointer
+import java.nio.ByteBuffer
 import java.nio.channels.Channel
 import java.nio.channels.ReadableByteChannel
 import java.nio.channels.SeekableByteChannel
@@ -81,6 +83,16 @@ class AvioCallbacks(
                     if (channel is WritableByteChannel) ByteChannelAvioCallbacks.WriteCallback(channel) else null,
                     if (channel is SeekableByteChannel) ByteChannelAvioCallbacks.SeekCallback(channel) else null,
                     channel
+            )
+        }
+
+        fun forReadingByteBuffer(buffer: ByteBuffer): AvioCallbacks {
+            val callbacks = ByteBufferAvioCallbacks(buffer.slice())
+            return AvioCallbacks(
+                callbacks.read(),
+                null,
+                callbacks.seek(),
+                null
             )
         }
     }
