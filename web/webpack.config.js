@@ -128,7 +128,11 @@ module.exports = (env, argv) => {
             },
             optimization: {
                 minimizer: [
-                    new TerserJSPlugin(),
+                    new TerserJSPlugin({
+                        terserOptions: {
+                            mangle: false,
+                        }
+                    }),
                     new CssMinimizerPlugin(),
                 ],
                 splitChunks: {
