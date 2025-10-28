@@ -21,30 +21,3 @@ license {
         files.from("src")
     }
 }
-
-val compileJs = tasks.register<Exec>("compileJs") {
-    // this file is a stand-in for `node_modules` -- I think it should be sufficient
-    inputs.file("pnpm-lock.yaml")
-    inputs.files(
-        "package.json", ".babelrc", "postcss.config.js", "tsconfig.json", "webpack.config.js",
-        ".eslintignore", ".eslintrc.js"
-    )
-    inputs.dir("src")
-    inputs.dir("typings")
-
-    outputs.dir("dist")
-
-    standardOutput = System.out
-    errorOutput = System.err
-    val cmdLine = mutableListOf("pnpm", "run", "build", "--")
-    val consoleOutput = gradle.startParameter.consoleOutput
-    if ((consoleOutput == ConsoleOutput.Auto && System.console() != null) || consoleOutput >= ConsoleOutput.Rich) {
-        cmdLine += "--color"
-    }
-    commandLine(cmdLine)
-    workingDir(project.layout.projectDirectory)
-}
-
-tasks.named("assemble") {
-    dependsOn(compileJs)
-}
