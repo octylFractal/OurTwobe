@@ -38,18 +38,11 @@ export class DiscordApi extends ApiBase {
 
     private async rateLimitedGet<R>(url: string, target: "discord" | "ourtwobe"): Promise<R> {
         const fixedUrl = `${target === "discord" ? DISCORD_BASE : OURTWOBE_BASE}${url}`;
-        const conf: AxiosRequestConfig = target === "discord"
-            ? {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                },
-            }
-            : {
-                auth: {
-                    username: "discord",
-                    password: this.token,
-                },
-            };
+        const conf: AxiosRequestConfig = {
+            headers: {
+                Authorization: `Bearer ${this.token}`,
+            },
+        };
         for (let i = 0; i < 5; i++) {
             try {
                 return this.doRequest("get", fixedUrl, conf);
@@ -57,7 +50,7 @@ export class DiscordApi extends ApiBase {
                 const axios = e as AxiosError;
                 if ("response" in axios && axios.response?.status === 429) {
                     // We are being rate limited :)
-                    const delay = (axios.response.data as {retry_after: number}).retry_after * 1000;
+                    const delay = (axios.response.data as { retry_after: number }).retry_after * 1000;
                     await new Promise(resolve => {
                         setTimeout(resolve, delay);
                     });
