@@ -87,8 +87,6 @@ class QueueSendHandler(
                 }
             }
         }
-            // only keep 1 song ready
-            .buffer(Channel.RENDEZVOUS)
             .transform { (playableItem, audioFlow) ->
                 logger.info("Playing '${playableItem.title}' (${playableItem.contentKey.describe()})")
                 var base = DataPipeEvent.ProgressItem(playableItem, 0.0)

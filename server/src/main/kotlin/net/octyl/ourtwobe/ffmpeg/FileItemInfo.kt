@@ -100,16 +100,21 @@ data class FileItemInfo(
                     ctx.streams(idx)
                 }
                 FileItemInfo(
-                    title = findTitle(ctx),
+                    title = findTitle(ctx, audioStream),
                     thumbnail = extractThumbnail(logger, ctx),
                     duration = getDuration(audioStream),
                 )
             }
         }
 
-        fun findTitle(ctx: AVFormatContext): String? {
-            val title = av_dict_get(ctx.metadata(), "title", null, 0)
-            return title?.value()?.string
+        fun findTitle(ctx: AVFormatContext, audioStream: AVStream): String? {
+            av_dict_get(ctx.metadata(), "title", null, 0)?.value()?.string?.let { containerTitle ->
+                return containerTitle
+            }
+            av_dict_get(audioStream.metadata(), "title", null, 0)?.value()?.string?.let { streamTitle ->
+                return streamTitle
+            }
+            return null
         }
 
         fun extractThumbnail(logger: KLogger, ctx: AVFormatContext): Thumbnail? {
