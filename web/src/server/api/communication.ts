@@ -29,9 +29,8 @@ export class OurTwobeCommApi extends ApiBase {
     ) {
         super(token, {
             baseURL: `${window.location.origin}/api`,
-            auth: {
-                username: "discord",
-                password: token,
+            headers: {
+                'Authorization': `Bearer ${token}`,
             },
         });
     }

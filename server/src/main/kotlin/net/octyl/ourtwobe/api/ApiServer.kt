@@ -32,7 +32,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.UnauthorizedResponse
 import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.basic
+import io.ktor.server.auth.bearer
 import io.ktor.server.http.content.HttpStatusCodeContent
 import io.ktor.server.plugins.autohead.AutoHeadResponse
 import io.ktor.server.plugins.calllogging.CallLogging
@@ -56,7 +56,6 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.cio.ChannelWriteException
-import io.ktor.utils.io.core.remaining
 import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -109,14 +108,11 @@ fun Application.module(
     }
 
     install(Authentication) {
-        basic("discord") {
+        bearer("discord") {
             skipWhen { it.sessions.get<Session>() != null }
             realm = "Discord-based access"
-            validate { credentials ->
-                if (credentials.name != "discord") {
-                    return@validate null
-                }
-                api.getMe(credentials.password)?.let {
+            authenticate { credentials ->
+                api.getMe(credentials.token)?.let {
                     sessions.set(Session(userId = it.id))
 
                     Authenticated
@@ -126,7 +122,7 @@ fun Application.module(
     }
 
     install(CallLogging) {
-        level = Level.DEBUG
+        level = Level.INFO
     }
 
     install(StatusPages) {

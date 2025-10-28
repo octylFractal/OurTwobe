@@ -201,6 +201,7 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
                 `${window.location.origin}/api/guilds/${guildId}/data-pipe`
             );
             source.onerror = (e): void => {
+                e.preventDefault();
                 if (source.readyState === EventSource.CLOSED) {
                     // hard failure
                     subscriber.error(e);
