@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -132,13 +133,9 @@ class QueuePlayer(
             while (currentCoroutineContext().isActive) {
                 val nextItem = removeNextItem(channel)
                 logger.info("Preparing '${nextItem.title}' (${nextItem.contentKey.describe()})")
-                try {
-                        emit(nextItem)
-                } catch (e: Throwable) {
-                    logger.warn(e) { "Failed to play '${nextItem.title}' (${nextItem.contentKey.describe()})" }
-                }
+                emit(nextItem)
             }
-        }
+        }.retryWhen { cause, _ -> cause !is Error }
         sendHandler.play(itemFlow, cancelFlow, volumeStateFlow).collect {
             _events.value = it
         }

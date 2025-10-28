@@ -141,6 +141,14 @@ fun Application.module(
             call.respond(cause.statusCode, cause.error)
         }
         exception<JsonProcessingException> { call, cause ->
+            if (call.request.path().endsWith("/data-pipe")) {
+                logger.warn(cause) { "JSON formatting error in data pipe!" }
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiError("internal.server.error", "An error has occurred in OurTwobe.")
+                )
+                return@exception
+            }
             logger.debug(cause) { "Caught JSON formatting error" }
             call.respond(
                 HttpStatusCode.BadRequest,

@@ -30,6 +30,8 @@ import java.time.Instant
 import java.util.UUID
 import javax.imageio.ImageIO
 
+val MAX_DURATION: Duration = Duration.ofDays(1)
+
 data class PlayableItem(
     val contentKey: ContentKey,
     val title: String,

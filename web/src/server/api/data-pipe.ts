@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {Observable, of, retry} from "rxjs";
+import {delay, Observable, of, retry} from "rxjs";
 import {oKeys, runBlock, type Writeable} from "../../utils";
 import {exhaustMap, map, tap} from "rxjs/operators";
 import {logErrorAndRetry} from "../../rx/observer";
@@ -237,6 +237,7 @@ export function newDataPipe(guildId: string, authenticate: () => Promise<void>):
                             console.error("Hard error from data-pipe, re-auth & restart...", err);
                         }
                     }),
+                    delay(1000),
                     // Re-authenticate, when it's done retry will occur
                     exhaustMap(() =>
                         of({}).pipe(

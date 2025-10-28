@@ -23,6 +23,7 @@ import mu.KLogger
 import mu.KotlinLogging
 import net.octyl.ourtwobe.api.ApiError
 import net.octyl.ourtwobe.api.ApiErrorException
+import net.octyl.ourtwobe.datapipe.MAX_DURATION
 import net.octyl.ourtwobe.datapipe.Thumbnail
 import org.bytedeco.ffmpeg.avcodec.AVCodec
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
@@ -41,6 +42,7 @@ import org.bytedeco.ffmpeg.global.avformat.avformat_alloc_context
 import org.bytedeco.ffmpeg.global.avformat.avformat_find_stream_info
 import org.bytedeco.ffmpeg.global.avformat.avformat_free_context
 import org.bytedeco.ffmpeg.global.avformat.avformat_open_input
+import org.bytedeco.ffmpeg.global.avutil
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_AUDIO
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_ARGB
 import org.bytedeco.ffmpeg.global.avutil.av_dict_get
@@ -102,7 +104,7 @@ data class FileItemInfo(
                 FileItemInfo(
                     title = findTitle(ctx, audioStream),
                     thumbnail = extractThumbnail(logger, ctx),
-                    duration = getDuration(audioStream),
+                    duration = getDuration(ctx, audioStream),
                 )
             }
         }
@@ -240,8 +242,14 @@ data class FileItemInfo(
 
         private val NANOS_IN_SECOND = Duration.ofSeconds(1).toNanos()
 
-        fun getDuration(audioStream: AVStream): Duration {
-            val duration = audioStream.duration() * av_q2d(audioStream.time_base())
+        fun getDuration(ctx: AVFormatContext, audioStream: AVStream): Duration {
+            val duration = if (audioStream.duration() != avutil.AV_NOPTS_VALUE) {
+                audioStream.duration() * av_q2d(audioStream.time_base())
+            } else if (ctx.duration() != avutil.AV_NOPTS_VALUE) {
+                ctx.duration().toDouble() / avutil.AV_TIME_BASE.toDouble()
+            } else {
+                return MAX_DURATION
+            }
             val durationSeconds = duration.toLong()
             val durationNanos = ((duration - durationSeconds) * NANOS_IN_SECOND).toLong()
             return Duration.ofSeconds(durationSeconds, durationNanos)
