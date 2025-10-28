@@ -25,6 +25,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -65,19 +66,24 @@ class QueueSendHandler(
         return flow {
             coroutineScope {
                 // Prepare hot flows so the audio is ready ASAP
-                playableItems.collect {
-                    val audioFlow = when (it.contentKey) {
+                playableItems.collect { item ->
+                    val audioFlow = when (item.contentKey) {
                         is YouTubeContentKey -> ytBufferSource.provideAudio(
-                            it.contentKey.videoId,
+                            item.contentKey.videoId,
                             volumeStateFlow
                         )
                         is FileContentKey -> fileBufferSource.provideAudio(
-                            it.contentKey,
+                            item.contentKey,
                             volumeStateFlow
                         )
-                        else -> throw IllegalArgumentException("Unsupported content key: ${it.contentKey}")
+                        else -> throw IllegalArgumentException("Unsupported content key: ${item.contentKey}")
                     }
-                    emit(it to audioFlow.produceIn(this).consumeAsFlow())
+                    emit(item to audioFlow.catch {
+                        if (it is Error) {
+                            throw it
+                        }
+                        logger.warn(it) { "Error while playing '${item.title}' (${item.contentKey.describe()})"}
+                    }.produceIn(this).consumeAsFlow())
                 }
             }
         }
