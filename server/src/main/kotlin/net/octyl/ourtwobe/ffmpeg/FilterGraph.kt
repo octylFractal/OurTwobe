@@ -65,20 +65,20 @@ abstract class FilterGraph(
 
         val allFilters = sequence {
             yield(Filter("abuffer", "src") { ctx ->
-                av_opt_set(ctx, "channel_layout", channelLayoutName(inputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
+                avOptSetChLayoutViaString(ctx, "channel_layout", inputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_int(ctx, "sample_fmt", inputFormat.sampleFormat.toLong(), AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_q(ctx, "time_base", inputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_int(ctx, "sample_rate", inputFormat.sampleRate.toLong(), AV_OPT_SEARCH_CHILDREN)
             })
             yieldAll(filters)
             yield(Filter("aformat", "format") { ctx ->
-                av_opt_set(ctx, "ch_layouts", channelLayoutName(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
+                avOptSetChLayoutViaString(ctx, "ch_layouts", outputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
             })
             yield(Filter("abuffersink", "sink") { ctx ->
-                av_opt_set(ctx, "ch_layouts", channelLayoutName(outputFormat.channelLayout), AV_OPT_SEARCH_CHILDREN)
+                avOptSetChLayoutViaString(ctx, "ch_layouts", outputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
                 avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
                 av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)

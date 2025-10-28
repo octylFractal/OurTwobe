@@ -19,13 +19,16 @@
 package net.octyl.ourtwobe.ffmpeg
 
 import org.bytedeco.ffmpeg.avutil.AVChannelLayout
+import org.bytedeco.ffmpeg.global.avutil
 import org.bytedeco.ffmpeg.global.avutil.AV_CHANNEL_ORDER_NATIVE
 import org.bytedeco.ffmpeg.global.avutil.av_make_error_string
+import org.bytedeco.ffmpeg.global.avutil.av_opt_set
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.javacpp.IntPointer
 import org.bytedeco.javacpp.LongPointer
 import org.bytedeco.javacpp.Pointer
+import java.nio.ByteBuffer
 
 private const val AV_ERROR_MAX_STRING_SIZE = 64L
 
@@ -40,7 +43,7 @@ fun avErr2Str(error: Int): String {
 }
 
 inline fun checkAv(error: Int, message: (error: String) -> String) {
-    if (error != 0) {
+    if (error < 0) {
         error(message(avErr2Str(error)))
     }
 }
@@ -57,8 +60,39 @@ fun avOptSetList(obj: Pointer, name: String, ints: IntArray, searchFlags: Int): 
     }
 }
 
-// ffmpeg accepts channels by hex mask
-fun channelLayoutName(channelLayout: AVChannelLayout): String {
-    assert(channelLayout.order() == AV_CHANNEL_ORDER_NATIVE)
-    return "0x${channelLayout.u_mask().toString(16)}"
+val LAYOUT_BUFFER = ThreadLocal.withInitial {
+    ByteBuffer.allocateDirect(64)
+}!!
+
+fun avOptSetChLayoutViaString(
+    obj: Pointer,
+    name: String,
+    layout: AVChannelLayout,
+    searchFlags: Int,
+): Int {
+    val buffer = LAYOUT_BUFFER.get()
+    while (true) {
+        buffer.clear()
+        val ret = avutil.av_channel_layout_describe(
+            layout,
+            buffer,
+            buffer.remaining().toLong()
+        )
+        checkAv(ret) {
+            "Failed to convert channel layout to string: $it"
+        }
+        if (ret <= buffer.remaining()) {
+            buffer.position(0)
+            buffer.limit(ret)
+            break
+        }
+        // buffer too small, reallocate
+        LAYOUT_BUFFER.set(ByteBuffer.allocateDirect(ret))
+    }
+    return av_opt_set(
+        obj,
+        BytePointer(name),
+        BytePointer(buffer),
+        searchFlags
+    )
 }
