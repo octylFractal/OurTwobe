@@ -21,6 +21,7 @@ import {DiscordApi} from "../discord/api";
 import {useSelector} from "react-redux";
 import {type LocalState} from "../redux/store";
 import {createFetches, type DiscordFetch} from "./fetchstore/discord";
+import {userToken} from "../redux/reducer";
 
 export interface ApiAndFetch {
     api: DiscordApi
@@ -35,19 +36,22 @@ export interface DiscordApiProviderProps {
 
 const apis = new Map<string, ApiAndFetch>();
 
-function getApiAndFetch(userToken: string): ApiAndFetch {
+function getApiAndFetch(userToken: string, onExpireToken: () => void): ApiAndFetch {
     let apiAndFetch = apis.get(userToken);
     if (typeof apiAndFetch === "undefined") {
         const api = new DiscordApi(userToken);
-        apiAndFetch = {api, fetch: createFetches(api)};
+        apiAndFetch = {api, fetch: createFetches(api, onExpireToken)};
         apis.set(userToken, apiAndFetch);
     }
     return apiAndFetch;
 }
 
 export const DiscordApiProvider: React.FC<React.PropsWithChildren<DiscordApiProviderProps>> = ({fallback, children}) => {
-    const userToken = useSelector((state: LocalState) => state.userToken) || null;
-    const discordApi = useMemo(() => userToken ? getApiAndFetch(userToken) : null, [userToken]);
+    const userTokenValue = useSelector((state: LocalState) => state.userToken) || null;
+    const discordApi = useMemo(() =>
+        userTokenValue ? getApiAndFetch(userTokenValue, () => userToken.logout()) : null,
+        [userTokenValue]
+    );
     if (!discordApi) {
         return <>{fallback || "Please log in first."}</>;
     }

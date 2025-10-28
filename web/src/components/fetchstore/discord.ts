@@ -22,6 +22,7 @@ import {type Guild} from "../../discord/api/response/Guild";
 import {type GuildId, type UserId} from "../../data/DiscordIds";
 import {type Channel} from "../../discord/api/response/Channel";
 import {type User} from "../../discord/api/response/User";
+import {AxiosError} from "axios";
 
 export interface DiscordFetch {
     guilds: FetchStore<Guild[], unknown>
@@ -36,9 +37,22 @@ function createWithPrefetch<I, R>(fetchFunc: (input: I) => Promise<R>, initial: 
     return store;
 }
 
-export function createFetches(api: DiscordApi): DiscordFetch {
+export function createFetches(api: DiscordApi, onExpireToken: () => void): DiscordFetch {
     return {
-        guilds: createWithPrefetch(() => api.getGuilds(), api.unique),
+        guilds: createWithPrefetch(async () => {
+            try {
+                return await api.getGuilds();
+            } catch (e) {
+                if (e instanceof AxiosError) {
+                    const status = e.response?.status;
+                    if (status === 401 || status === 403) {
+                        onExpireToken();
+                        return [];
+                    }
+                }
+                throw e;
+            }
+        }, api.unique),
         guild: createFetchStore(guildId => api.getGuild(guildId)),
         channels: createFetchStore(guildId => api.getChannels(guildId)),
         users: createFetchStore(userId => api.getUser(userId)),
