@@ -68,7 +68,7 @@ fun main() {
         .setMemberCachePolicy(MemberCachePolicy.ALL)
         .setEventManager(OptimizedAnnotatedEventManager())
         .setEventPool(EVENT_POOL)
-        .setActivity(Activity.playing("your music!"))
+        .setActivity(Activity.of(Activity.ActivityType.CUSTOM_STATUS, "Playing your music!"))
         .setAudioSendFactory(::NanoSendSystem)
         .build()
 
