@@ -128,8 +128,8 @@ class QueueSendHandler(
                     logger.info("Finished '${playableItem.title}' (${playableItem.contentKey.describe()})")
                 }
             }
-            // store 0.5s worth of audio in queue
-            .buffer((TimeUnit.MILLISECONDS.toMillis(500L) / 20L).toInt())
+            // store 1s worth of audio in queue
+            .buffer((TimeUnit.SECONDS.toMillis(1L) / 20L).toInt())
             .map { (update, audio) ->
                 audio?.let {
                     audioQueue.send(it)

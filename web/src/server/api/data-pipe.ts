@@ -109,7 +109,7 @@ export type ContentKey = YouTubeContentKey | FileContentKey | NothingContentKey;
 export function describeContentKey(key: ContentKey): string {
     switch (key.type) {
         case 'youtube':
-            return `https://youtu.be/${key.youtubeId}`;
+            return `https://youtu.be/${key.videoId}`;
         case 'file':
             return `Uploaded File '${key.filename}'`;
         case 'nothing':
@@ -119,7 +119,7 @@ export function describeContentKey(key: ContentKey): string {
 
 export interface YouTubeContentKey {
     readonly type: 'youtube'
-    readonly youtubeId: string
+    readonly videoId: string
 }
 
 export interface FileContentKey {
