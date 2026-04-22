@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.discord.audio
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onClosed
@@ -29,11 +30,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.transform
-import mu.KotlinLogging
 import net.dv8tion.jda.api.audio.AudioSendHandler
 import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.datapipe.DataPipeEvent
@@ -44,7 +43,6 @@ import net.octyl.ourtwobe.discord.PlayerCommand
 import net.octyl.ourtwobe.files.FileOpusAudioBufferSource
 import net.octyl.ourtwobe.youtube.audio.YouTubeOpusAudioBufferSource
 import java.nio.ByteBuffer
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 class QueueSendHandler(
@@ -90,7 +88,7 @@ class QueueSendHandler(
             }
         }
             .transform { (playableItem, audioFlow) ->
-                logger.info("Playing '${playableItem.title}' (${playableItem.contentKey.describe()})")
+                logger.info { "Playing '${playableItem.title}' (${playableItem.contentKey.describe()})" }
                 var base = DataPipeEvent.ProgressItem(playableItem, 0.0)
                 try {
                     // number of milliseconds needed for an 0.01% increase
@@ -122,10 +120,10 @@ class QueueSendHandler(
                     }
                 } catch (_: PurposefulCancellationException) {
                     // no big deal
-                    logger.info("Skipped '${playableItem.title}' (${playableItem.contentKey.describe()})")
+                    logger.info { "Skipped '${playableItem.title}' (${playableItem.contentKey.describe()})" }
                 } finally {
                     emit(base.copy(progress = 100.0) to null)
-                    logger.info("Finished '${playableItem.title}' (${playableItem.contentKey.describe()})")
+                    logger.info { "Finished '${playableItem.title}' (${playableItem.contentKey.describe()})" }
                 }
             }
             // store 1s worth of audio in queue

@@ -18,7 +18,6 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
-import kotlinx.io.Buffer
 import org.bytedeco.ffmpeg.avformat.AVIOContext
 import org.bytedeco.ffmpeg.avformat.Read_packet_Pointer_BytePointer_int
 import org.bytedeco.ffmpeg.avformat.Seek_Pointer_long_int

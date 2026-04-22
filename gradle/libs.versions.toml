@@ -1,28 +1,31 @@
 [versions]
-kotlin = "2.2.21"
-lwjgl = "3.3.6"
-logback = "1.5.20"
+kotlin = "2.3.20"
+lwjgl = "3.4.1"
+logback = "1.5.32"
+jdave = "0.1.8"
 
 [plugins]
-licenser = "org.cadixdev.licenser:0.6.1"
+levelHeadered = "net.octyl.level-headered:0.1.2"
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [libraries]
-ktor-bom = "io.ktor:ktor-bom:3.3.1"
+ktor-bom = "io.ktor:ktor-bom:3.4.2"
 coroutines-bom = "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2"
-jackson-bom = "com.fasterxml.jackson:jackson-bom:2.20.0"
+jackson-bom = "com.fasterxml.jackson:jackson-bom:2.21.2"
 
 greenishJungle = "com.techshroom:greenish-jungle:0.0.3"
 
-guava = "com.google.guava:guava:33.5.0-jre"
+guava = "com.google.guava:guava:33.6.0-jre"
 
-jda = "net.dv8tion:JDA:6.1.0"
+jda = "net.dv8tion:JDA:6.4.1"
+jdave-api = { module = "club.minnced:jdave-api", version.ref = "jdave" }
+jdave-linux-x64 = { module = "club.minnced:jdave-native-linux-x86-64", version.ref = "jdave" }
 
 javacpp-ffmpeg = "org.bytedeco:ffmpeg-platform:7.1.1-1.5.12"
 
 slf4j-api = "org.slf4j:slf4j-api:2.0.17"
-kotlin-logging = "io.github.microutils:kotlin-logging:3.0.5"
+kotlin-logging = "io.github.oshai:kotlin-logging:8.0.01"
 
 [libraries.lwjgl]
 module = "org.lwjgl:lwjgl"

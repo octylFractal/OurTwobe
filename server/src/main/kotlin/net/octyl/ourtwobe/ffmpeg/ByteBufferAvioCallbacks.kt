@@ -18,7 +18,7 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bytedeco.ffmpeg.avformat.Read_packet_Pointer_BytePointer_int
 import org.bytedeco.ffmpeg.avformat.Seek_Pointer_long_int
 import org.bytedeco.ffmpeg.global.avformat.AVSEEK_SIZE
@@ -55,7 +55,7 @@ internal class ByteBufferAvioCallbacks(
                     buffer.position(buffer.position() + toRead)
                     toRead
                 } catch (t: Throwable) {
-                    LOGGER.warn("Error reading from ByteBuffer", t)
+                    LOGGER.warn(t) { "Error reading from ByteBuffer" }
                     AVERROR_UNKNOWN
                 }
             }
@@ -78,7 +78,7 @@ internal class ByteBufferAvioCallbacks(
                     buffer.position(newPos.toInt())
                     newPos
                 } catch (t: Throwable) {
-                    LOGGER.warn("Error seeking in ByteBuffer", t)
+                    LOGGER.warn(t) { "Error seeking in ByteBuffer" }
                     AVERROR_UNKNOWN.toLong()
                 }
             }

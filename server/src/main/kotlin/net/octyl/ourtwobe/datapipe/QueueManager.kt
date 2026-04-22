@@ -19,6 +19,7 @@
 package net.octyl.ourtwobe.datapipe
 
 import com.google.common.collect.Multimaps
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.selects.select
-import mu.KotlinLogging
 import net.octyl.ourtwobe.api.ApiError
 import net.octyl.ourtwobe.api.ApiErrorException
 import net.octyl.ourtwobe.api.Authorization

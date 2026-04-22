@@ -20,6 +20,7 @@ package net.octyl.ourtwobe.api
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.SerializationFeature
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.utils.EmptyContent
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -36,7 +37,6 @@ import io.ktor.server.auth.bearer
 import io.ktor.server.http.content.HttpStatusCodeContent
 import io.ktor.server.plugins.autohead.AutoHeadResponse
 import io.ktor.server.plugins.calllogging.CallLogging
-import io.ktor.server.plugins.compression.Compression
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.path
@@ -60,7 +60,6 @@ import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.io.readByteArray
-import mu.KotlinLogging
 import net.octyl.ourtwobe.InternalPeeker
 import net.octyl.ourtwobe.MODULES
 import net.octyl.ourtwobe.datapipe.DataPipe
@@ -89,7 +88,6 @@ fun Application.module(
 ) {
     val api = DiscordApi()
 
-    install(Compression)
     install(AutoHeadResponse)
 
     install(ContentNegotiation) {

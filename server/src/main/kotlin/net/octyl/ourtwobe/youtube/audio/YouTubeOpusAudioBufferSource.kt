@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.youtube.audio
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.writeFully
 import io.ktor.utils.io.writer
@@ -31,13 +32,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retry
-import mu.KotlinLogging
 import net.octyl.ourtwobe.Config
 import net.octyl.ourtwobe.ffmpeg.AvioCallbacks
 import net.octyl.ourtwobe.ffmpeg.FFmpegOpusReencoder
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
+import kotlin.time.Duration.Companion.milliseconds
 
 class YouTubeOpusAudioBufferSource(
     private val config: Config.YouTube
@@ -65,7 +66,7 @@ class YouTubeOpusAudioBufferSource(
         }
             .retry(5) {
                 logger.info(it) { "Failed to play $id, retrying..." }
-                delay(1000)
+                delay(1000.milliseconds)
                 true
             }
     }

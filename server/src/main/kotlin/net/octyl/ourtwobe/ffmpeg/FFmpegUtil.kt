@@ -20,13 +20,11 @@ package net.octyl.ourtwobe.ffmpeg
 
 import org.bytedeco.ffmpeg.avutil.AVChannelLayout
 import org.bytedeco.ffmpeg.global.avutil
-import org.bytedeco.ffmpeg.global.avutil.AV_CHANNEL_ORDER_NATIVE
 import org.bytedeco.ffmpeg.global.avutil.av_make_error_string
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.javacpp.IntPointer
-import org.bytedeco.javacpp.LongPointer
 import org.bytedeco.javacpp.Pointer
 import java.nio.ByteBuffer
 

@@ -1,11 +1,11 @@
 plugins {
     application
-    alias(libs.plugins.licenser)
+    alias(libs.plugins.levelHeadered)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
 }
 
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(25))
 
 repositories {
     mavenCentral()
@@ -44,7 +44,6 @@ dependencies {
     implementation("io.ktor:ktor-server-auth")
     implementation("io.ktor:ktor-server-auto-head-response")
     implementation("io.ktor:ktor-server-call-logging")
-    implementation("io.ktor:ktor-server-compression")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-server-sessions-jvm")
     implementation("io.ktor:ktor-server-status-pages")
@@ -54,6 +53,8 @@ dependencies {
     implementation(libs.guava)
 
     implementation(libs.jda)
+    implementation(libs.jdave.api)
+    runtimeOnly(libs.jdave.linux.x64)
 
     implementation(libs.javacpp.ffmpeg)
 
@@ -72,16 +73,12 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }
 
-license {
-    exclude {
-        it.file.startsWith(project.layout.buildDirectory.get().asFile)
-    }
-    header(rootProject.file("HEADER.txt"))
-    (this as ExtensionAware).extra.apply {
-        for (key in listOf("organization", "url")) {
-            set(key, rootProject.property(key))
-        }
-    }
+levelHeadered {
+    headerTemplate(rootProject.file("HEADER.txt"))
+    templateVariables.set(mapOf(
+        "organization" to rootProject.property("organization").toString(),
+        "url" to rootProject.property("url").toString(),
+    ))
 }
 
 tasks.jar {
@@ -89,4 +86,9 @@ tasks.jar {
     isReproducibleFileOrder = true
 }
 
-application.mainClass.set("net.octyl.ourtwobe.OurTwobeKt")
+application {
+    mainClass = "net.octyl.ourtwobe.OurTwobeKt"
+    applicationDefaultJvmArgs = listOf(
+        "--enable-native-access=ALL-UNNAMED",
+    )
+}

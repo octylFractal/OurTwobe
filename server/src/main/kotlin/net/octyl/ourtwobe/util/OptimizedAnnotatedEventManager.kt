@@ -19,7 +19,7 @@
 package net.octyl.ourtwobe.util
 
 import com.google.common.collect.HashBasedTable
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager
 import net.dv8tion.jda.api.hooks.IEventManager
@@ -73,6 +73,7 @@ class OptimizedAnnotatedEventManager : IEventManager {
     override fun handle(event: GenericEvent) {
         lock.read {
             var eventClass: Class<*> = event.javaClass
+            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
             do {
                 for ((listener, method) in eventTable.row(eventClass)) {
                     try {

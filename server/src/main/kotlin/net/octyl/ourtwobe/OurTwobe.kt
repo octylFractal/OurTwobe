@@ -18,13 +18,14 @@
 
 package net.octyl.ourtwobe
 
+import club.minnced.discord.jdave.interop.JDaveSessionFactory
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
-import mu.KotlinLogging
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.audio.AudioModuleConfig
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.events.StatusChangeEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
@@ -38,8 +39,8 @@ import net.octyl.ourtwobe.discord.DiscordIdAuthorization
 import net.octyl.ourtwobe.discord.audio.NanoSendSystem
 import net.octyl.ourtwobe.files.FileItemResolver
 import net.octyl.ourtwobe.util.OptimizedAnnotatedEventManager
-import net.octyl.ourtwobe.youtube.api.YouTubeApi
 import net.octyl.ourtwobe.youtube.YouTubeItemResolver
+import net.octyl.ourtwobe.youtube.api.YouTubeApi
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -53,7 +54,7 @@ val EVENT_POOL: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactor
     .build())
 
 fun main() {
-    LOGGER.info("Spinning up OurTwobe...")
+    LOGGER.info { "Spinning up OurTwobe..." }
     val config = loadConfig(Path.of("./secrets/config.properties"))
 
     val jda = JDABuilder.createLight(config.discord.token)
@@ -69,7 +70,11 @@ fun main() {
         .setEventManager(OptimizedAnnotatedEventManager())
         .setEventPool(EVENT_POOL)
         .setActivity(Activity.of(Activity.ActivityType.CUSTOM_STATUS, "Playing your music!"))
-        .setAudioSendFactory(::NanoSendSystem)
+        .setAudioModuleConfig(
+            AudioModuleConfig()
+                .withDaveSessionFactory(JDaveSessionFactory())
+                .withAudioSendFactory(::NanoSendSystem)
+        )
         .build()
 
     val embeddedServer = embeddedServer(Netty, port = 13445, host = "127.0.0.1") {
@@ -84,7 +89,7 @@ fun main() {
     embeddedServer.start()
 
     jda.awaitReady()
-    LOGGER.info("OurTwobe is online and ready to go!")
+    LOGGER.info { "OurTwobe is online and ready to go!" }
     val shutdown = CountDownLatch(1)
     jda.addEventListener(object {
         @SubscribeEvent
@@ -96,6 +101,6 @@ fun main() {
         }
     })
     shutdown.await()
-    LOGGER.warn("JDA shutdown received, entire server is going down!")
+    LOGGER.warn { "JDA shutdown received, entire server is going down!" }
     embeddedServer.stop(1000L, 5000L)
 }

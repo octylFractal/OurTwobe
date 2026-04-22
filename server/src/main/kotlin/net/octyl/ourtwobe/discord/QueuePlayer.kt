@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.discord
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import mu.KotlinLogging
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.audio.SpeakingMode
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel
@@ -96,7 +96,7 @@ class QueuePlayer(
                         is PlayerCommand.JoinChannel -> {
                             val channel = guild.getVoiceChannelById(command.channel)
                                 ?: error("Unknown channel: ${command.channel}")
-                            logger.info("Joining channel '${channel.name}' (${channel.id})")
+                            logger.info { "Joining channel '${channel.name}' (${channel.id})" }
                             if (queueDrainJob != null) {
                                 logger.warn { "Queue drain job leftover?" }
                                 queueDrainJob.cancelAndJoin()
@@ -105,7 +105,7 @@ class QueuePlayer(
                             audioManager.openAudioConnection(channel)
                         }
                         is PlayerCommand.Disconnect -> {
-                            logger.info("Disconnecting or disconnected from voice")
+                            logger.info { "Disconnecting or disconnected from voice" }
                             audioManager.closeAudioConnection()
                             queueDrainJob?.cancelAndJoin()
                             queueDrainJob = null
@@ -132,7 +132,7 @@ class QueuePlayer(
         val itemFlow = flow {
             while (currentCoroutineContext().isActive) {
                 val nextItem = removeNextItem(channel)
-                logger.info("Preparing '${nextItem.title}' (${nextItem.contentKey.describe()})")
+                logger.info { "Preparing '${nextItem.title}' (${nextItem.contentKey.describe()})" }
                 emit(nextItem)
             }
         }.retryWhen { cause, _ -> cause !is Error }

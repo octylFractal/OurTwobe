@@ -18,6 +18,7 @@
 
 package net.octyl.ourtwobe.youtube.audio
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -30,8 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import mu.KotlinLogging
 import net.octyl.ourtwobe.Config
+import kotlin.time.Duration.Companion.milliseconds
 
 private val BASE_COMMAND = listOf(
     "yt-dlp", "-q", "-o", "-", "-f", "bestaudio"
@@ -64,7 +65,7 @@ class YouTubeDlProcessBinding(config: Config.YouTube, id: String) : AutoCloseabl
                         }
                         val exitCode = process.onExit().await().exitValue()
                         if (exitCode != 0 && "Broken pipe" !in text) {
-                            logger.warn("Error from ytdl: $text")
+                            logger.warn { "Error from ytdl: $text" }
                         }
                     } finally {
                         // kill the entire download process when finished
@@ -79,7 +80,7 @@ class YouTubeDlProcessBinding(config: Config.YouTube, id: String) : AutoCloseabl
         } finally {
             runBlocking {
                 // wait for the error job to finish from process kill
-                withTimeoutOrNull(10L) {
+                withTimeoutOrNull(10L.milliseconds) {
                     errorJob.join()
                 }
                 // or force it, if it's not moving quickly

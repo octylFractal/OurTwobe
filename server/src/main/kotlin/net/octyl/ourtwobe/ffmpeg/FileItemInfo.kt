@@ -18,9 +18,9 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.HttpStatusCode
-import mu.KLogger
-import mu.KotlinLogging
 import net.octyl.ourtwobe.api.ApiError
 import net.octyl.ourtwobe.api.ApiErrorException
 import net.octyl.ourtwobe.datapipe.MAX_DURATION

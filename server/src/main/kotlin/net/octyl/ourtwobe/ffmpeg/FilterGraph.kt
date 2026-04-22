@@ -18,9 +18,6 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import mu.KotlinLogging
 import org.bytedeco.ffmpeg.avfilter.AVFilterContext
 import org.bytedeco.ffmpeg.avfilter.AVFilterGraph
 import org.bytedeco.ffmpeg.avutil.AVDictionary
@@ -42,7 +39,6 @@ import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_frame_clone
 import org.bytedeco.ffmpeg.global.avutil.av_frame_free
 import org.bytedeco.ffmpeg.global.avutil.av_frame_unref
-import org.bytedeco.ffmpeg.global.avutil.av_opt_set
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_int
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_q
 
