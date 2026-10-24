@@ -24,18 +24,66 @@
 
 @import "~bootswatch/dist/slate/bootswatch";
 
-.nav-item {
-  display: inline-flex;
-  align-items: stretch;
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-}
-
 .navbar-img {
   display: inline-block;
   vertical-align: middle;
   margin-right: map-get($spacers, 3);
+}
+
+// The sidebar's right edge is drawn instead of being a border, so the active row can skip it and connect to the page.
+// Rows cover the sidebar's background, so each inactive row draws its own piece of the edge.
+// The color is SUBTLE_BORDER from classes.ts, made opaque so overlapping lines don't stack.
+$sidebar-edge-color: mix($white, $body-bg, 25%);
+$sidebar-edge-width: $border-width * 2;
+$sidebar-tab-radius: $sidebar-edge-width * 3;
+// the half-pixel steps soften the curve's edges
+$sidebar-tab-curve-stops:
+  transparent calc(#{$sidebar-tab-radius - $sidebar-edge-width} - .5px),
+  $sidebar-edge-color ($sidebar-tab-radius - $sidebar-edge-width),
+  $sidebar-edge-color calc(#{$sidebar-tab-radius} - .5px),
+  $body-bg $sidebar-tab-radius;
+
+@include media-breakpoint-up(md) {
+  .app-sidebar {
+    box-shadow: inset (-$sidebar-edge-width) 0 0 $sidebar-edge-color;
+  }
+
+  // a pseudo-element rather than a shadow, so it can also cover the row's bottom border
+  .app-sidebar .list-group-item:not(.active)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: calc(-1 * #{$list-group-border-width});
+    width: $sidebar-edge-width;
+    background-color: $sidebar-edge-color;
+  }
+
+  .app-sidebar .list-group-item.active {
+    box-shadow:
+      inset 0 $sidebar-edge-width 0 $sidebar-edge-color,
+      inset 0 (-$sidebar-edge-width) 0 $sidebar-edge-color,
+      inset $sidebar-edge-width 0 0 $sidebar-edge-color;
+  }
+
+  // Curve the edge into the active row's top and bottom lines, like a folder tab.
+  .app-sidebar .list-group-item.active::before,
+  .app-sidebar .list-group-item.active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    width: $sidebar-tab-radius;
+    height: $sidebar-tab-radius;
+    pointer-events: none;
+  }
+
+  .app-sidebar .list-group-item.active::before {
+    top: $sidebar-edge-width - $sidebar-tab-radius;
+    background: radial-gradient(circle at 0 0, $sidebar-tab-curve-stops);
+  }
+
+  .app-sidebar .list-group-item.active::after {
+    bottom: $sidebar-edge-width - $sidebar-tab-radius;
+    background: radial-gradient(circle at 0 100%, $sidebar-tab-curve-stops);
+  }
 }

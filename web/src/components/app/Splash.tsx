@@ -27,12 +27,14 @@ const Splash: React.FC = () => {
                 the place to share your tunes, jokes, and other miscellaneous YouTube content!
             </p>
 
-            <p>To get started, log in to Discord in the upper-right corner.</p>
+            <p>To get started, log in to Discord from the menu on the right.</p>
         </Container>
-        <p className="lead">
+        <p className="lead text-center">
             Now supporting
             {' '}
             <a href="https://knowyourmeme.com/memes/cultures/fully-automated-luxury-gay-space-communism">
+                <span className="font-family-special-elite">Skeuomorphic</span>
+                {' '}
                 <span className="font-family-monoton me-1">Fully{' '}</span>
                 <span className="font-family-press-start-2p">Automated</span>
                 {' '}

@@ -27,6 +27,12 @@ import {Comparators} from "../../util/compare";
 import {requireNonNull} from "../../utils";
 import {createSimpleSelector} from "../../redux/selectors";
 import {DragDropSubmission} from "../DragDropSubmission";
+import {VolumeSlider} from "../VolumeSlider";
+import {ItemSubmission} from "../ItemSubmission";
+import {LocalChannelSelect} from "../ChannelSelect";
+import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
+import {SUBTLE_BORDER} from "../../css/classes";
+import classNames from "classnames";
 
 const Server: React.FC = () => {
     const {guildId} = useParams<{ guildId: string }>();
@@ -42,12 +48,23 @@ const Server: React.FC = () => {
     );
     const nowPlaying = useSelector(nowPlayingSelector);
     return <DragDropSubmission>
-        <div className="d-flex flex-column">
-            <div className="d-inline-flex flex-column align-items-center">
-                <p>Now playing:</p>
+        <div className="d-flex flex-column gap-3">
+            <div className="w-100 mx-auto" style={{maxWidth: "28rem"}}>
+                <ItemSubmission/>
+            </div>
+            <div className="d-flex flex-column align-items-center gap-2">
+                <div className="w-100 d-flex flex-column gap-2" style={{maxWidth: "28rem"}}>
+                    <SimpleErrorBoundary context="the channel list">
+                        <React.Suspense fallback={<span>Channel: loading...</span>}>
+                            <LocalChannelSelect guildId={guildId}/>
+                        </React.Suspense>
+                    </SimpleErrorBoundary>
+                    <VolumeSlider guildId={guildId}/>
+                </div>
+                <h2 className="h5 mb-0">Now playing</h2>
                 <PlayableItemCard item={nowPlaying.item} progress={nowPlaying.progress}/>
             </div>
-            <div className="my-3 border-bottom border-light"/>
+            <div className={classNames("border-bottom", SUBTLE_BORDER)}/>
             <div className="d-flex flex-row flex-grow-1">
                 {Object.entries(queues)
                     .filter(([, queue]) => queue.items.length > 0)

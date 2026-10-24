@@ -16,17 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {type ReactNode} from "react";
-import {NavLink} from "react-router";
-import {Dropdown} from "react-bootstrap";
-
-export interface RoutedDropdownLinkProps {
-    to: string;
-    exact?: boolean;
-    className?: string;
-    children?: ReactNode;
-}
-
-export const RoutedDropdownLink: React.FC<RoutedDropdownLinkProps> = (props) => {
-    return <Dropdown.Item as={NavLink} active {...props}/>;
-};
+/**
+ * Border color classes for a faint separator line. Combine with a border side class, e.g. `border-end`.
+ */
+export const SUBTLE_BORDER = "border-white border-opacity-25";

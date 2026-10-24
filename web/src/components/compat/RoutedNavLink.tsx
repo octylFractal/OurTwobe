@@ -18,18 +18,25 @@
 
 import React, {type ReactNode} from "react";
 import {NavLink, type NavLinkProps} from "react-router";
-import {Nav} from "react-bootstrap";
+import classNames from "classnames";
 
-export interface RoutedNavLinkProps extends NavLinkProps {
+export interface RoutedNavLinkProps extends Omit<NavLinkProps, "className"> {
+    className?: string;
     children?: ReactNode;
 }
 
-const RoutedNavLink: React.FC<RoutedNavLinkProps> = ({children, ...props}) => {
-    return <Nav.Item>
-        <NavLink className={({isActive}): string => isActive ? "active routed nav-link" : "routed nav-link"} {...props}>
-            {children}
-        </NavLink>
-    </Nav.Item>;
+/**
+ * A {@link NavLink} styled as a list group item, for use in a list group.
+ */
+const RoutedNavLink: React.FC<RoutedNavLinkProps> = ({children, className, ...props}) => {
+    return <NavLink
+        className={({isActive}): string => classNames(
+            "list-group-item list-group-item-action", className, {active: isActive}
+        )}
+        {...props}
+    >
+        {children}
+    </NavLink>;
 };
 
 export default RoutedNavLink;

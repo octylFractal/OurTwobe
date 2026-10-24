@@ -16,14 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {ServerDropdown} from "./ServerDropdown";
 import React, {use} from "react";
 import {DiscordApiContext} from "./DiscordApiContext";
 import {asNonNull} from "../utils";
 import {useAutoFetch} from "./fetchstore/patch";
+import RoutedNavLink from "./compat/RoutedNavLink";
+import {ServerIcon} from "./ServerIcon";
+import {ROW_ICON_SIZE} from "./RowIcon";
+import {ListGroup} from "react-bootstrap";
 
-export const LocalServerDropdown: React.FC = () => {
+export const LocalServerList: React.FC = () => {
     const discordApi = asNonNull(use(DiscordApiContext));
     const guilds = useAutoFetch(discordApi.fetch.guilds, discordApi.api.unique);
-    return <ServerDropdown guilds={guilds}/>;
+    if (guilds.length === 0) {
+        return <ListGroup.Item style={{cursor: "default"}}>No servers.</ListGroup.Item>;
+    }
+    return <>
+        {guilds.map(guild =>
+            <RoutedNavLink key={guild.id} to={`/server/${guild.id}`} className="d-flex align-items-center">
+                <ServerIcon guildData={guild} size={ROW_ICON_SIZE} className="me-2 flex-shrink-0"/>
+                <span className="text-break">{guild.name}</span>
+            </RoutedNavLink>
+        )}
+    </>;
 };

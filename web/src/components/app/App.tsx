@@ -20,7 +20,7 @@ import React from "react";
 import {BrowserRouter as Router, Route, Routes} from "react-router";
 import ScrollToTop from "../compat/ScrollToTop";
 import {SimpleErrorBoundary} from "../SimpleErrorBoundary";
-import {AppNavbar} from "./AppNavbar";
+import {AppLayout} from "./AppLayout";
 import {Container} from "react-bootstrap";
 import {ExposeStore} from "../../redux/store";
 
@@ -28,7 +28,6 @@ const SplashLazy = React.lazy(async () => import("./Splash"));
 const LoginHandlerLazy = React.lazy(() => import("./LoginHandler"));
 const ServerLazy = React.lazy(() => import("./Server"));
 const ServerContextLazy = React.lazy(() => import("./ServerContext"));
-const ServerNavbarLazy = React.lazy(() => import("./ServerNavbar"));
 
 const CommonContainer: React.FC<React.PropsWithChildren> = ({children}) =>
     <Container fluid className="p-3">{children}</Container>;
@@ -38,33 +37,33 @@ export const App: React.FC = () => {
         <SimpleErrorBoundary context="the application root">
             <Router>
                 <ScrollToTop/>
-                <AppNavbar/>
-                <Routes>
-                    <Route path="discord/" element={
-                        <React.Suspense fallback={<p>Loading...</p>}>
-                            <CommonContainer>
-                                <LoginHandlerLazy/>
-                            </CommonContainer>
-                        </React.Suspense>
-                    }/>
-                    <Route path="server/:guildId" element={
-                        <React.Suspense fallback={<p>Loading...</p>}>
-                            <ServerContextLazy>
-                                <ServerNavbarLazy/>
+                <AppLayout>
+                    <Routes>
+                        <Route path="discord/" element={
+                            <React.Suspense fallback={<p>Loading...</p>}>
                                 <CommonContainer>
-                                    <ServerLazy/>
+                                    <LoginHandlerLazy/>
                                 </CommonContainer>
-                            </ServerContextLazy>
-                        </React.Suspense>
-                    }/>
-                    <Route path="/" element={
-                        <React.Suspense fallback={<p>Loading...</p>}>
-                            <CommonContainer>
-                                <SplashLazy/>
-                            </CommonContainer>
-                        </React.Suspense>
-                    }/>
-                </Routes>
+                            </React.Suspense>
+                        }/>
+                        <Route path="server/:guildId" element={
+                            <React.Suspense fallback={<p>Loading...</p>}>
+                                <ServerContextLazy>
+                                    <CommonContainer>
+                                        <ServerLazy/>
+                                    </CommonContainer>
+                                </ServerContextLazy>
+                            </React.Suspense>
+                        }/>
+                        <Route path="/" element={
+                            <React.Suspense fallback={<p>Loading...</p>}>
+                                <CommonContainer>
+                                    <SplashLazy/>
+                                </CommonContainer>
+                            </React.Suspense>
+                        }/>
+                    </Routes>
+                </AppLayout>
             </Router>
         </SimpleErrorBoundary>
     </ExposeStore>;

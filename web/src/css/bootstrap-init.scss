@@ -3,6 +3,9 @@
 
 $font-size-base: 1.25rem;
 $component-active-bg: $blue;
+$dropdown-border-radius: 0;
+$list-group-active-bg: $body-bg;
+$list-group-action-hover-color: $list-group-action-color;
 
 @import "~bootstrap/scss/variables";
 

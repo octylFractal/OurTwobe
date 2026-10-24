@@ -22,7 +22,7 @@ import {type LocalState} from "../redux/store";
 import {type GuildId} from "../data/DiscordIds";
 import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
-import {Col, Form, OverlayTrigger, Row, Tooltip} from "react-bootstrap";
+import {Form, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 
 export interface VolumeSliderProps {
@@ -65,30 +65,25 @@ export const VolumeSlider: React.FC<VolumeSliderProps> = ({guildId}) => {
             });
     }, [commApi, localVolume]);
 
-    return <Form.Group as={Row} className="align-items-center" controlId={volId}>
-        <Form.Label column>Volume:</Form.Label>
-        <Col className="p-0">
-            <span>{remoteVolume}</span>
-        </Col>
-        <Col className="d-flex align-items-center">
-            {/* Restore a normal value for width */}
-            <OverlayTrigger placement="top" overlay={
-                <Tooltip>
-                    {displayedVolume}
-                </Tooltip>
-            }>
-                <Form.Range
-                    className="w-auto border-success"
-                    name="volume"
-                    min={0} max={100}
-                    value={displayedVolume ?? 0}
-                    onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-                        setLocalVolume({value: e.currentTarget.valueAsNumber, dragging: true});
-                    }}
-                    onMouseUp={doChange}
-                    onTouchEnd={doChange}
-                    onBlur={doChange}/>
-            </OverlayTrigger>
-        </Col>
+    return <Form.Group className="d-flex align-items-center gap-2 w-100" controlId={volId}>
+        <Form.Label className="mb-0">Volume</Form.Label>
+        <OverlayTrigger placement="top" overlay={
+            <Tooltip>
+                {displayedVolume}
+            </Tooltip>
+        }>
+            <Form.Range
+                className="flex-grow-1"
+                name="volume"
+                min={0} max={100}
+                value={displayedVolume ?? 0}
+                onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                    setLocalVolume({value: e.currentTarget.valueAsNumber, dragging: true});
+                }}
+                onMouseUp={doChange}
+                onTouchEnd={doChange}
+                onBlur={doChange}/>
+        </OverlayTrigger>
+        <span className="text-end" style={{minWidth: "3ch"}}>{displayedVolume ?? "–"}</span>
     </Form.Group>;
 };

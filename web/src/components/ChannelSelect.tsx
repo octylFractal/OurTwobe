@@ -16,9 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {type ChangeEvent} from "react";
+import React, {use} from "react";
 import {type Channel} from "../discord/api/response/Channel";
-import FormControl from "react-bootstrap/FormControl";
 import {useSelector} from "react-redux";
 import {type LocalState} from "../redux/store";
 import {type ChannelId, type GuildId} from "../data/DiscordIds";
@@ -26,7 +25,10 @@ import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {optionalFrom} from "../server/api/communication";
 import {useUniqueId} from "./reactHelpers";
-import {Col, Form, Row} from "react-bootstrap";
+import {Dropdown} from "react-bootstrap";
+import {DiscordApiContext} from "./DiscordApiContext";
+import {asNonNull} from "../utils";
+import {useAutoFetch} from "./fetchstore/patch";
 
 export interface ChannelSelectProps {
     guildId: GuildId
@@ -36,7 +38,7 @@ export interface ChannelSelectProps {
 const NONE = "!!";
 
 export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels}) => {
-    const channelControlId = useUniqueId("channel");
+    const channelToggleId = useUniqueId("channel");
     const selectedChannel = useSelector((state: LocalState) => state.guildState[guildId]?.settings?.activeChannel);
     const commApi = useNonNullContext(CommApiContext);
 
@@ -50,28 +52,36 @@ export const ChannelSelect: React.FC<ChannelSelectProps> = ({guildId, channels})
             );
     }
 
-    return <Form.Group as={Row} className="align-items-center" controlId={channelControlId}>
-        <Form.Label column>Channel:</Form.Label>
-        <Col>
-            <FormControl as="select" name="channel" size="sm"
-                         style={{minWidth: "20ch"}}
-                         value={selectedChannel || NONE}
-                         onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-                             e.preventDefault();
-                             const value = e.currentTarget.value;
-                             // I have to reassign this apparently
-                             e.currentTarget.value = selectedChannel || NONE;
-                             setSelectedChannel(value === NONE ? undefined : value);
-                         }}>
-                <option value={NONE}>None</option>
-                <React.Suspense fallback={<></>}>
-                    {channels
-                        .map(channel =>
-                            <option key={channel.id} value={channel.id}>{channel.name}</option>
-                        )
-                    }
-                </React.Suspense>
-            </FormControl>
-        </Col>
-    </Form.Group>;
+    const selectedName = channels.find(channel => channel.id === selectedChannel)?.name ?? "None";
+
+    return <div className="d-flex align-items-center gap-2">
+        <span>Channel:</span>
+        <Dropdown
+            onSelect={(value: string | null): void => {
+                setSelectedChannel(value === null || value === NONE ? undefined : value);
+            }}
+        >
+            <Dropdown.Toggle id={channelToggleId} variant="secondary" size="sm">{selectedName}</Dropdown.Toggle>
+            <Dropdown.Menu>
+                <Dropdown.Item eventKey={NONE} active={!selectedChannel}>None</Dropdown.Item>
+                {channels
+                    .map(channel =>
+                        <Dropdown.Item key={channel.id} eventKey={channel.id} active={channel.id === selectedChannel}>
+                            {channel.name}
+                        </Dropdown.Item>
+                    )
+                }
+            </Dropdown.Menu>
+        </Dropdown>
+    </div>;
+};
+
+export interface LocalChannelSelectProps {
+    guildId: GuildId
+}
+
+export const LocalChannelSelect: React.FC<LocalChannelSelectProps> = ({guildId}) => {
+    const discordApi = asNonNull(use(DiscordApiContext));
+    const channels = useAutoFetch(discordApi.fetch.channels, guildId);
+    return <ChannelSelect guildId={guildId} channels={channels}/>;
 };

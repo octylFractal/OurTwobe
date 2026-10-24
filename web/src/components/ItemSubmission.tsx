@@ -17,7 +17,7 @@
  */
 
 import React, {type FormEvent, useCallback, useState} from "react";
-import {Button, Col, Form, Row} from "react-bootstrap";
+import {Button, Form, InputGroup} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {CommApiContext} from "./CommApiContext";
@@ -52,31 +52,26 @@ export const ItemSubmission: React.FC = () => {
             .finally(() => setDisabled(false));
     }, [value, commApi, setDisabled, setError]);
 
-    return <Form className="flex-fill ps-3" onSubmit={onSubmit}>
-        <Form.Group as={Row} className="align-items-center" controlId={idId}>
-            <Form.Label column className="text-center">
-                Submit an item<br/>
-                <small>(video or playlist!)</small><br/>
-                <small>(or even just drop files below!)</small>
+    return <Form className="w-100" onSubmit={onSubmit}>
+        <Form.Group controlId={idId}>
+            <Form.Label className="mb-1">
+                Submit an item <small>(video or playlist!)</small>
             </Form.Label>
-            <Col>
+            <InputGroup size="sm">
                 <Form.Control
-                    className="mx-1"
                     type="text"
-                    size="sm"
                     name="item-id"
                     value={value}
                     onChange={e => void setValue(e.currentTarget.value)}
                     disabled={disabled}
+                    isInvalid={error}
                 />
-            </Col>
-            <Col>
-                <Button className="mx-1" type="submit" size="sm" disabled={disabled || !value}>
+                <Button type="submit" disabled={disabled || !value}>
                     Submit!
                 </Button>
-            </Col>
-            {error && <Col><Form.Control.Feedback className="mx-1">Failed to submit!</Form.Control.Feedback></Col>}
+            </InputGroup>
+            {error && <Form.Text className="d-block text-danger">Failed to submit!</Form.Text>}
+            <Form.Text className="text-reset">(or even just drop files below!)</Form.Text>
         </Form.Group>
-    </Form>
-;
+    </Form>;
 };

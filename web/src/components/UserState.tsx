@@ -17,37 +17,34 @@
  */
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {ROW_ICON_SIZE, RowIcon} from "./RowIcon";
 import React, {type ReactElement} from "react";
 import {generateOAuthLink} from "../discord/auth";
 import {type UserInfoRecord} from "../redux/reducer";
 import {NavbarImg} from "./NavbagImg";
-import {Nav, NavDropdown} from "react-bootstrap";
-import {useUniqueId} from "./reactHelpers";
+import {ListGroup} from "react-bootstrap";
 import {getAvatarUrl, getUserNameColor, type User} from "../discord/api/response/User";
 import {faSpinner} from "@fortawesome/free-solid-svg-icons/faSpinner";
 import {faSignInAlt} from "@fortawesome/free-solid-svg-icons/faSignInAlt";
+import {faSignOutAlt} from "@fortawesome/free-solid-svg-icons/faSignOutAlt";
+
+const WORDMARK_URL = new URL("../discord/Discord-Logo-Blurple.svg", import.meta.url).toString();
 
 function loading(): ReactElement {
-    return <div className="navbar-text d-inline-flex align-items-center">
+    return <ListGroup.Item>
         <FontAwesomeIcon spin icon={faSpinner} size="2x"/>
-    </div>;
+    </ListGroup.Item>;
 }
 
 const UserProfileDisplay: React.FC<User> = (props) => {
-    const size = 44;
+    const size = ROW_ICON_SIZE;
     return <>
         <NavbarImg src={`${getAvatarUrl(props)}?size=${size}`}
                    alt="Avatar"
-                   className="rounded-circle border border-light"
-                   style={
-                       // use content-box so the border doesn't affect the size of the image
-                       {
-                           boxSizing: "content-box",
-                       }
-                   }
+                   className="rounded-circle border border-light me-2 flex-shrink-0"
                    width={size}
                    height={size}/>
-        <span style={{color: getUserNameColor(props)}}>{props.username}</span>
+        <span className="text-break" style={{color: getUserNameColor(props)}}>{props.username}</span>
     </>;
 };
 
@@ -57,24 +54,28 @@ export interface UserStateProps {
 }
 
 export const UserState: React.FC<UserStateProps> = ({userInfo: {heardFromDiscord, profile}, logOut}) => {
-    const id = useUniqueId("nav-dropdown");
     if (!heardFromDiscord) {
         return loading();
     }
     if (profile === null) {
         // lazily generate OAuth link to prevent overwriting state
-        return <Nav.Link href="#" onClick={() => void window.location.assign(generateOAuthLink())}
-                         className="d-block">
-            <FontAwesomeIcon icon={faSignInAlt}/> Log In to
-            <img className="d-inline-block" height={48}
-                 src={new URL("../app/Discord-Logo+Wordmark-Color.svg", import.meta.url).toString()}
-                 alt="Discord Logo"/>
-        </Nav.Link>;
+        return <ListGroup.Item action href="#" onClick={() => void window.location.assign(generateOAuthLink())}
+                               className="d-flex align-items-center">
+            <RowIcon icon={faSignInAlt}/>
+            <span>
+                Log In to
+                <img src={WORDMARK_URL} alt="Discord" height={24} className="d-block mt-1"/>
+            </span>
+        </ListGroup.Item>;
     }
 
-    return <NavDropdown id={id} title={<UserProfileDisplay {...profile}/>}>
-        <NavDropdown.Item onClick={logOut}>
-            Log Out
-        </NavDropdown.Item>
-    </NavDropdown>;
+    return <>
+        <ListGroup.Item className="d-flex align-items-center">
+            <UserProfileDisplay {...profile}/>
+        </ListGroup.Item>
+        <ListGroup.Item action onClick={logOut} className="d-flex align-items-center">
+            {/* the heavy bracket on the left of this icon's glyph makes it look left of center */}
+            <RowIcon icon={faSignOutAlt} transform="right-1"/>Log Out
+        </ListGroup.Item>
+    </>;
 };
