@@ -90,5 +90,6 @@ application {
     mainClass = "net.octyl.ourtwobe.OurTwobeKt"
     applicationDefaultJvmArgs = listOf(
         "--enable-native-access=ALL-UNNAMED",
+        "-Dorg.lwjgl.system.memoryBackend=ffm",
     )
 }

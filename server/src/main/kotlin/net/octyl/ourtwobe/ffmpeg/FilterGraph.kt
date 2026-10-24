@@ -35,10 +35,14 @@ import org.bytedeco.ffmpeg.global.avfilter.avfilter_link
 import org.bytedeco.ffmpeg.global.avutil.AVERROR_EAGAIN
 import org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF
 import org.bytedeco.ffmpeg.global.avutil.AV_OPT_SEARCH_CHILDREN
+import org.bytedeco.ffmpeg.global.avutil.AV_OPT_TYPE_CHLAYOUT
+import org.bytedeco.ffmpeg.global.avutil.AV_OPT_TYPE_INT
+import org.bytedeco.ffmpeg.global.avutil.AV_OPT_TYPE_SAMPLE_FMT
 import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_frame_clone
 import org.bytedeco.ffmpeg.global.avutil.av_frame_free
 import org.bytedeco.ffmpeg.global.avutil.av_frame_unref
+import org.bytedeco.ffmpeg.global.avutil.av_opt_set_chlayout
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_int
 import org.bytedeco.ffmpeg.global.avutil.av_opt_set_q
 
@@ -61,23 +65,27 @@ abstract class FilterGraph(
 
         val allFilters = sequence {
             yield(Filter("abuffer", "src") { ctx ->
-                avOptSetChLayoutViaString(ctx, "channel_layout", inputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
-                av_opt_set_int(ctx, "sample_fmt", inputFormat.sampleFormat.toLong(), AV_OPT_SEARCH_CHILDREN)
-                av_opt_set_q(ctx, "time_base", inputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
-                av_opt_set_int(ctx, "sample_rate", inputFormat.sampleRate.toLong(), AV_OPT_SEARCH_CHILDREN)
+                checkAv(av_opt_set_chlayout(ctx, "channel_layout", inputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)) {
+                    "Unable to set channel_layout: $it"
+                }
+                checkAv(av_opt_set_int(ctx, "sample_fmt", inputFormat.sampleFormat.toLong(), AV_OPT_SEARCH_CHILDREN)) {
+                    "Unable to set sample_fmt: $it"
+                }
+                checkAv(av_opt_set_q(ctx, "time_base", inputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)) {
+                    "Unable to set time_base: $it"
+                }
+                checkAv(av_opt_set_int(ctx, "sample_rate", inputFormat.sampleRate.toLong(), AV_OPT_SEARCH_CHILDREN)) {
+                    "Unable to set sample_rate: $it"
+                }
             })
             yieldAll(filters)
-            yield(Filter("aformat", "format") { ctx ->
-                avOptSetChLayoutViaString(ctx, "ch_layouts", outputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
-                avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
-                avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
-                av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
-            })
             yield(Filter("abuffersink", "sink") { ctx ->
-                avOptSetChLayoutViaString(ctx, "ch_layouts", outputFormat.channelLayout, AV_OPT_SEARCH_CHILDREN)
-                avOptSetList(ctx, "sample_fmts", intArrayOf(outputFormat.sampleFormat), AV_OPT_SEARCH_CHILDREN)
-                avOptSetList(ctx, "sample_rates", intArrayOf(outputFormat.sampleRate), AV_OPT_SEARCH_CHILDREN)
-                av_opt_set_q(ctx, "time_base", outputFormat.timeBase, AV_OPT_SEARCH_CHILDREN)
+                val layout = outputFormat.channelLayout
+                val sampleFormats = intArrayOf(outputFormat.sampleFormat)
+                val sampleRates = intArrayOf(outputFormat.sampleRate)
+                avOptSetArray(ctx, "channel_layouts", AV_OPT_TYPE_CHLAYOUT, 1, layout, AV_OPT_SEARCH_CHILDREN)
+                avOptSetArray(ctx, "sample_formats", AV_OPT_TYPE_SAMPLE_FMT, sampleFormats, AV_OPT_SEARCH_CHILDREN)
+                avOptSetArray(ctx, "samplerates", AV_OPT_TYPE_INT, sampleRates, AV_OPT_SEARCH_CHILDREN)
             })
         }.toList()
 

@@ -18,15 +18,12 @@
 
 package net.octyl.ourtwobe.ffmpeg
 
-import org.bytedeco.ffmpeg.avutil.AVChannelLayout
-import org.bytedeco.ffmpeg.global.avutil
+import org.bytedeco.ffmpeg.global.avutil.AV_OPT_ARRAY_REPLACE
 import org.bytedeco.ffmpeg.global.avutil.av_make_error_string
-import org.bytedeco.ffmpeg.global.avutil.av_opt_set
-import org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin
+import org.bytedeco.ffmpeg.global.avutil.av_opt_set_array
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.javacpp.IntPointer
 import org.bytedeco.javacpp.Pointer
-import java.nio.ByteBuffer
 
 private const val AV_ERROR_MAX_STRING_SIZE = 64L
 
@@ -47,50 +44,19 @@ inline fun checkAv(error: Int, message: (error: String) -> String) {
 }
 
 /**
- * Checked call to [org.bytedeco.ffmpeg.global.avutil.av_opt_set_bin].
+ * Checked call to [av_opt_set_array], writing [count] elements of [valType] from [values] starting at index 0.
  */
-fun avOptSetList(obj: Pointer, name: String, ints: IntArray, searchFlags: Int): Int {
-    val intsWithTerm = ints.size + 1
-    return IntPointer(intsWithTerm.toLong()).use {
-        it.put(*ints)
-        it.put(ints.size.toLong(), -1)
-        av_opt_set_bin(obj, name, BytePointer(it), intsWithTerm * Int.SIZE_BYTES, searchFlags)
+fun avOptSetArray(obj: Pointer, name: String, valType: Int, count: Int, values: Pointer, searchFlags: Int) {
+    checkAv(av_opt_set_array(obj, name, searchFlags or AV_OPT_ARRAY_REPLACE, 0, count, valType, values)) {
+        "Unable to set option '$name': $it"
     }
 }
 
-val LAYOUT_BUFFER = ThreadLocal.withInitial {
-    ByteBuffer.allocateDirect(64)
-}!!
-
-fun avOptSetChLayoutViaString(
-    obj: Pointer,
-    name: String,
-    layout: AVChannelLayout,
-    searchFlags: Int,
-): Int {
-    val buffer = LAYOUT_BUFFER.get()
-    while (true) {
-        buffer.clear()
-        val ret = avutil.av_channel_layout_describe(
-            layout,
-            buffer,
-            buffer.remaining().toLong()
-        )
-        checkAv(ret) {
-            "Failed to convert channel layout to string: $it"
-        }
-        if (ret <= buffer.remaining()) {
-            buffer.position(0)
-            buffer.limit(ret)
-            break
-        }
-        // buffer too small, reallocate
-        LAYOUT_BUFFER.set(ByteBuffer.allocateDirect(ret))
+/**
+ * [avOptSetArray] for int-backed [valType]s, such as `AV_OPT_TYPE_INT` or `AV_OPT_TYPE_SAMPLE_FMT`.
+ */
+fun avOptSetArray(obj: Pointer, name: String, valType: Int, values: IntArray, searchFlags: Int) {
+    IntPointer(*values).use {
+        avOptSetArray(obj, name, valType, values.size, it, searchFlags)
     }
-    return av_opt_set(
-        obj,
-        BytePointer(name),
-        BytePointer(buffer),
-        searchFlags
-    )
 }
