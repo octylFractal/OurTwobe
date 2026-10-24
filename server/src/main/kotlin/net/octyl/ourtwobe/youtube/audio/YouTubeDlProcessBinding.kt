@@ -35,7 +35,7 @@ import net.octyl.ourtwobe.Config
 import kotlin.time.Duration.Companion.milliseconds
 
 private val BASE_COMMAND = listOf(
-    "yt-dlp", "-q", "-o", "-", "-f", "bestaudio"
+    "yt-dlp", "--ignore-config", "-q", "-o", "-", "-f", "bestaudio"
 )
 
 class YouTubeDlProcessBinding(config: Config.YouTube, id: String) : AutoCloseable {
