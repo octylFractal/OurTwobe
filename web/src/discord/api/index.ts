@@ -45,7 +45,7 @@ export class DiscordApi extends ApiBase {
         };
         for (let i = 0; i < 5; i++) {
             try {
-                return this.doRequest("get", fixedUrl, conf);
+                return await this.doRequest("get", fixedUrl, conf);
             } catch (e) {
                 const axios = e as AxiosError;
                 if ("response" in axios && axios.response?.status === 429) {

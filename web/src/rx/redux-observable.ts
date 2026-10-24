@@ -18,20 +18,22 @@
 
 import {type Store} from "redux";
 import {Observable} from "rxjs";
-import type {SimpleSelector} from "../redux/selectors";
 
+/**
+ * Emit the selected value now, and again each time it changes (compared with `===`).
+ */
 export function observeStore<S, R>(
     store: Store<S>,
-    selector: SimpleSelector<S, R>
+    selector: (state: S) => R
 ): Observable<R> {
     return new Observable<R>(subscriber => {
-        // Fire initial value as well
-        subscriber.next(selector(store.getState()));
+        let last = selector(store.getState());
+        subscriber.next(last);
         return store.subscribe(() => {
             try {
                 const value = selector(store.getState());
-                if (selector.recomputations() > 0) {
-                    selector.resetRecomputations();
+                if (value !== last) {
+                    last = value;
                     subscriber.next(value);
                 }
             } catch (e) {
