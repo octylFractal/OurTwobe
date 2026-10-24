@@ -1,4 +1,4 @@
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - core-js
-  - sharp
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: true
+  sharp: true

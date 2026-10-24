@@ -307,7 +307,7 @@ fun Application.module(
                                 )
                                 filename to ByteBuffer.wrap(it.provider().readBuffer().readByteArray())
                             } finally {
-                                it.dispose()
+                                it.release()
                             }
                             val item = fileItemResolver.resolveItem(filename, fileContent)
                             state.queueManager.insert(userId, item)
