@@ -18,14 +18,14 @@
 
 import React, {useEffect, useMemo} from "react";
 import {DiscordApiProvider} from "../DiscordApiContext";
-import {Navigate, useParams} from "react-router-dom";
+import {Navigate, useParams} from "react-router";
 import {useDispatch, useSelector} from "react-redux";
 import {type LocalState} from "../../redux/store";
 import {type DataPipeError, type DataPipeEvent, newDataPipe} from "../../server/api/data-pipe";
 import {CommApiContext} from "../CommApiContext";
 import {OurTwobeCommApi} from "../../server/api/communication";
 import {type GuildId} from "../../data/DiscordIds";
-import {tap} from "rxjs/operators";
+import {tap} from "rxjs";
 import {exhaustiveCheck} from "../../utils";
 import {type Dispatch} from "redux";
 import {guildState} from "../../redux/reducer";
@@ -59,9 +59,9 @@ const RealServerContext: React.FC<React.PropsWithChildren<RealServerContextProps
         return () => void subscription.unsubscribe();
     }, [guildId, commApi, dispatch]);
     return <DiscordApiProvider>
-        <CommApiContext.Provider value={commApi}>
+        <CommApiContext value={commApi}>
             {children}
-        </CommApiContext.Provider>
+        </CommApiContext>
     </DiscordApiProvider>;
 };
 

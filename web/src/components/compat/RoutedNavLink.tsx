@@ -17,7 +17,7 @@
  */
 
 import React, {type ReactNode} from "react";
-import {NavLink, type NavLinkProps} from "react-router-dom";
+import {NavLink, type NavLinkProps} from "react-router";
 import {Nav} from "react-bootstrap";
 
 export interface RoutedNavLinkProps extends NavLinkProps {

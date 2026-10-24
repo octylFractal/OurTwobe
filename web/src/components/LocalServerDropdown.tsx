@@ -17,13 +17,13 @@
  */
 
 import {ServerDropdown} from "./ServerDropdown";
-import React, {useContext} from "react";
+import React, {use} from "react";
 import {DiscordApiContext} from "./DiscordApiContext";
 import {asNonNull} from "../utils";
 import {useAutoFetch} from "./fetchstore/patch";
 
 export const LocalServerDropdown: React.FC = () => {
-    const discordApi = asNonNull(useContext(DiscordApiContext));
+    const discordApi = asNonNull(use(DiscordApiContext));
     const guilds = useAutoFetch(discordApi.fetch.guilds, discordApi.api.unique);
     return <ServerDropdown guilds={guilds}/>;
 };

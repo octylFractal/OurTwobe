@@ -22,7 +22,7 @@ import React from "react";
 import {Provider} from "react-redux";
 import {setGlobalDevModeChecks} from "reselect";
 
-setGlobalDevModeChecks({ inputStabilityCheck: 'never', identityFunctionCheck: 'never', });
+setGlobalDevModeChecks({ inputStabilityCheck: 'never', identityFunctionCheck: 'never' });
 
 const store = configureStore({
     reducer

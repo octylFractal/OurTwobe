@@ -19,7 +19,7 @@
 import React, {useMemo} from "react";
 import {useSelector} from "react-redux";
 import {type LocalState} from "../../redux/store";
-import {useParams} from "react-router-dom";
+import {useParams} from "react-router";
 import {UserIdQueue} from "../UserQueue";
 import {PlayableItemCard} from "../PlayableItemCard";
 import {NO_PLAYING_ITEM} from "../../server/api/data-pipe";

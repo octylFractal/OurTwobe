@@ -18,7 +18,7 @@
 
 import {observeStore} from "../redux-observable";
 import {createSimpleSelector} from "../../redux/selectors";
-import {concatMap} from "rxjs/operators";
+import {concatMap} from "rxjs";
 import {userInfo, userToken} from "../../redux/reducer";
 import {logErrorAndRetry} from "../observer";
 import {DiscordApi} from "../../discord/api";

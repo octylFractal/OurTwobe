@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {type ChangeEvent, useCallback, useEffect, useState} from "react";
+import React, {type ChangeEvent, useCallback, useState} from "react";
 import {useSelector} from "react-redux";
 import {type LocalState} from "../redux/store";
 import {type GuildId} from "../data/DiscordIds";
@@ -24,66 +24,66 @@ import {CommApiContext} from "./CommApiContext";
 import {useNonNullContext} from "./hook/useNonNullContext";
 import {Col, Form, OverlayTrigger, Row, Tooltip} from "react-bootstrap";
 import {useUniqueId} from "./reactHelpers";
-import {asNonNull} from "../utils";
-import {usePrevious} from "./hook/usePrevious";
 
 export interface VolumeSliderProps {
     guildId: GuildId
 }
 
+interface LocalVolume {
+    value: number
+    dragging: boolean
+}
+
 export const VolumeSlider: React.FC<VolumeSliderProps> = ({guildId}) => {
     const volId = useUniqueId("volume");
-    const volume = useSelector((state: LocalState) => state.guildState[guildId]?.settings?.volume);
-    const lastVolume = usePrevious(volume);
-    const [userVolume, setUserVolume] = useState(volume);
-    const lastUserVolume = usePrevious(userVolume);
+    const remoteVolume = useSelector((state: LocalState) => state.guildState[guildId]?.settings?.volume);
+    // the user's slider value; after release, it's kept until the server's volume changes so the slider doesn't jump back
+    const [localVolume, setLocalVolume] = useState<LocalVolume | undefined>(undefined);
+    const [lastRemoteVolume, setLastRemoteVolume] = useState(remoteVolume);
     const commApi = useNonNullContext(CommApiContext);
 
-    useEffect(() => {
-        if (typeof userVolume === "undefined") {
-            // initial state needs to be set
-            setUserVolume(volume);
-        } else if (lastVolume === userVolume && userVolume === lastUserVolume) {
-            // change from server is being propagated to us, accept it
-            setUserVolume(volume);
+    if (remoteVolume !== lastRemoteVolume) {
+        setLastRemoteVolume(remoteVolume);
+        if (localVolume && !localVolume.dragging) {
+            setLocalVolume(undefined);
         }
-    }, [userVolume, lastUserVolume, volume, lastVolume]);
+    }
+    const displayedVolume = localVolume?.value ?? remoteVolume;
 
-    const setVolume = useCallback((newVolume: number): void => {
+    const doChange = useCallback((): void => {
+        if (!localVolume?.dragging) {
+            return;
+        }
+        setLocalVolume({value: localVolume.value, dragging: false});
         commApi.updateGuildSettings({
-            volume: Math.round(newVolume),
+            volume: Math.round(localVolume.value),
         })
             .catch(err => {
                 // This should really be more visible, but I can't be arsed right now
                 console.error(err);
-                setUserVolume(volume);
+                setLocalVolume(undefined);
             });
-    }, [commApi, volume]);
-
-    const doChange = useCallback(
-        () => void setVolume(asNonNull(userVolume)),
-        [setVolume, userVolume]
-    );
+    }, [commApi, localVolume]);
 
     return <Form.Group as={Row} className="align-items-center" controlId={volId}>
         <Form.Label column>Volume:</Form.Label>
         <Col className="p-0">
-            <span>{volume}</span>
+            <span>{remoteVolume}</span>
         </Col>
         <Col className="d-flex align-items-center">
             {/* Restore a normal value for width */}
             <OverlayTrigger placement="top" overlay={
                 <Tooltip>
-                    {userVolume}
+                    {displayedVolume}
                 </Tooltip>
             }>
                 <Form.Range
                     className="w-auto border-success"
                     name="volume"
                     min={0} max={100}
-                    value={userVolume || 0}
+                    value={displayedVolume ?? 0}
                     onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-                        setUserVolume(e.currentTarget.valueAsNumber);
+                        setLocalVolume({value: e.currentTarget.valueAsNumber, dragging: true});
                     }}
                     onMouseUp={doChange}
                     onTouchEnd={doChange}

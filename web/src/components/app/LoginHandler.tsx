@@ -19,28 +19,23 @@
 import React, {useEffect, useState} from "react";
 import queryString from "query-string";
 import {LS_CONSTANTS} from "../../app/localStorage";
-import {Navigate} from "react-router-dom";
-import {connect} from "react-redux";
+import {Navigate} from "react-router";
+import {useDispatch, useSelector} from "react-redux";
 import {type LocalState} from "../../redux/store";
 import {userToken} from "../../redux/reducer";
 
-interface LoginHandlerProps {
-    loggedIn: boolean
-    logIn(userToken: string): void
-}
-
-const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn, logIn}) => {
-    const [failed, setFailed] = useState(false);
+const LoginHandler: React.FC = () => {
+    const loggedIn = useSelector((state: LocalState) => state.userInfo.heardFromDiscord && state.userInfo.profile !== null);
+    const dispatch = useDispatch();
+    const [hashData] = useState(() => queryString.parse(window.location.hash) as DiscordLoginData);
+    const [failed] = useState(() => hashData.state !== localStorage.getItem(LS_CONSTANTS.DISCORD_AUTH_STATE));
     useEffect(() => {
-        const hashData = queryString.parse(window.location.hash) as DiscordLoginData;
-        const knownState = localStorage.getItem(LS_CONSTANTS.DISCORD_AUTH_STATE);
-        if (hashData.state !== knownState) {
+        if (failed) {
             console.warn("Failed to finish OAuth flow, invalid state returned");
-            setFailed(true);
             return;
         }
-        logIn(hashData.access_token);
-    }, [logIn]);
+        dispatch(userToken.login(hashData.access_token));
+    }, [failed, hashData, dispatch]);
 
     if (loggedIn) {
         return <Navigate to="/"/>;
@@ -55,14 +50,7 @@ const LoginHandler: React.FC<LoginHandlerProps> = ({loggedIn, logIn}) => {
     </div>;
 };
 
-export default connect(
-    (state: LocalState) => ({
-        loggedIn: state.userInfo.heardFromDiscord && state.userInfo.profile !== null
-    }),
-    {
-        logIn: userToken.login,
-    },
-)(LoginHandler);
+export default LoginHandler;
 
 interface DiscordLoginData {
     access_token: string;

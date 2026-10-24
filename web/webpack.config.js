@@ -1,4 +1,3 @@
-/* eslint-env node */
 const path = require('path');
 const process = require('process');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -9,7 +8,6 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const merge = require("webpack-merge");
-const {TsconfigPathsPlugin} = require('tsconfig-paths-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 
@@ -28,7 +26,7 @@ const commonConfig = {
 
         }),
         new ForkTsCheckerWebpackPlugin(),
-        new ESLintPlugin(),
+        new ESLintPlugin({extensions: ["ts", "tsx"]}),
         new ProgressPlugin({}),
     ],
     module: {
@@ -64,11 +62,6 @@ const commonConfig = {
         ],
     },
     resolve: {
-        plugins: [
-            new TsconfigPathsPlugin({
-                extensions: resolveExtensions,
-            }),
-        ],
         extensions: resolveExtensions,
     },
     output: {
@@ -128,11 +121,7 @@ module.exports = (env, argv) => {
             },
             optimization: {
                 minimizer: [
-                    new TerserJSPlugin({
-                        terserOptions: {
-                            mangle: false,
-                        }
-                    }),
+                    new TerserJSPlugin(),
                     new CssMinimizerPlugin(),
                 ],
                 splitChunks: {

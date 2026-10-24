@@ -58,7 +58,7 @@ export const DiscordApiProvider: React.FC<React.PropsWithChildren<DiscordApiProv
     if (!discordApi) {
         return <>{fallback || "Please log in first."}</>;
     }
-    return <DiscordApiContext.Provider value={discordApi}>
+    return <DiscordApiContext value={discordApi}>
         {children}
-    </DiscordApiContext.Provider>;
+    </DiscordApiContext>;
 };

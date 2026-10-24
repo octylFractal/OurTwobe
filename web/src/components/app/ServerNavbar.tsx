@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, {useContext} from "react";
-import {useParams} from "react-router-dom";
+import React, {use} from "react";
+import {useParams} from "react-router";
 import {ServerIcon} from "../ServerIcon";
 import {ChannelSelect} from "../ChannelSelect";
 import {DiscordApiContext} from "../DiscordApiContext";
@@ -35,7 +35,7 @@ interface ServerNavbarProps {
 
 const ServerNavbar: React.FC<ServerNavbarProps> = ({guildId}) => {
     const id = useUniqueId("collapse");
-    const discordApi = asNonNull(useContext(DiscordApiContext));
+    const discordApi = asNonNull(use(DiscordApiContext));
     const guild = useAutoFetch(discordApi.fetch.guild, guildId);
     const channels = useAutoFetch(discordApi.fetch.channels, guildId);
 

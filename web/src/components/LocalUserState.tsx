@@ -16,14 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {connect} from "react-redux";
+import React, {useCallback} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import {type LocalState} from "../redux/store";
 import {UserState} from "./UserState";
 import {userToken} from "../redux/reducer";
 
-export const LocalUserState = connect(
-    (state: LocalState) => ({
-        userInfo: state.userInfo,
-    }),
-    {logOut: userToken.logout}
-)(UserState);
+export const LocalUserState: React.FC = () => {
+    const userInfo = useSelector((state: LocalState) => state.userInfo);
+    const dispatch = useDispatch();
+    const logOut = useCallback(() => void dispatch(userToken.logout()), [dispatch]);
+    return <UserState userInfo={userInfo} logOut={logOut}/>;
+};

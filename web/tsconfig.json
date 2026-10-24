@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
+        "rootDir": ".",
         "outDir": "./dist/",
         "noImplicitAny": true,
         "noImplicitThis": true,
@@ -15,7 +15,7 @@
         "strict": true,
         "noImplicitReturns": true,
         "allowSyntheticDefaultImports": true,
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "typeRoots": [
             "./typings"
         ],

@@ -16,9 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {delay, Observable, of, retry} from "rxjs";
+import {delay, exhaustMap, map, Observable, of, retry, tap} from "rxjs";
 import {oKeys, runBlock, type Writeable} from "../../utils";
-import {exhaustMap, map, tap} from "rxjs/operators";
 import {logErrorAndRetry} from "../../rx/observer";
 import {type ChannelId, type UserId} from "../../data/DiscordIds";
 
